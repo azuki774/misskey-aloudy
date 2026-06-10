@@ -28,6 +28,9 @@ npm-debug.log*
 result
 result-*
 
+# direnv
+.direnv/
+
 # Astro
 .astro/
 

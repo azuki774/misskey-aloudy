@@ -12,6 +12,9 @@ A web application that reads Misskey timelines aloud using VoiceVox text-to-spee
 ## Quick Start
 
 ```bash
+# Enter Nix dev shell (or use direnv allow for auto-activation)
+nix develop
+
 # Install dependencies
 bun install
 
@@ -21,6 +24,8 @@ bun run dev
 # Build for production
 bun run build
 ```
+
+> **Note**: Always use the Nix dev shell for development. The system-installed Bun may not work due to CPU instruction set requirements (AVX2).
 
 ## Documentation
 
