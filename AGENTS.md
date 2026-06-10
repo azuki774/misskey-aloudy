@@ -4,6 +4,24 @@
 
 A website that reads out Misskey's timeline. Built with Astro and Bun, using Nix (flake.nix) for the development environment.
 
+## Project Structure
+
+```
+misskey-aloudy/
+├── docs/                    # Documentation
+│   └── requirements.md      # Product requirements and roadmap
+├── src/                     # Source code
+│   ├── components/          # Reusable UI components
+│   ├── layouts/             # Page layouts
+│   └── pages/               # Route pages
+├── public/                  # Static assets
+├── AGENTS.md                # This file (development rules)
+├── README.md                # User-facing documentation
+├── flake.nix                # Nix development environment
+├── package.json             # Dependencies and scripts
+└── tsconfig.json            # TypeScript configuration
+```
+
 ## Tech Stack
 
 - **Framework**: Astro
