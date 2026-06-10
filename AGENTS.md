@@ -23,7 +23,9 @@ A website that reads out Misskey's timeline. Built with Astro and Bun, using Nix
 ### Development
 
 - Use `bun` for all package management (install, add, remove, run).
-- Use `flake.nix` for the development shell. Run `nix develop` to enter it.
+- Use `flake.nix` for the development shell.
+- **Prefer running tools through Nix/direnv**: The repo includes `.envrc` with `use flake`. Run `direnv allow` once per checkout (or per worktree) to activate the Nix dev shell automatically. After that, run repo tools directly (e.g., `bun install`, `bun run dev`, `bun run lint`) without prefixing commands with `nix develop -c`.
+- `nix develop -c <command>` is acceptable for one-off invocations from outside a direnv-activated shell, but in-session work should rely on the active shell.
 - Run the linter before every commit. Pre-commit hooks enforce this.
 
 ### Code Style
