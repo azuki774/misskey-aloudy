@@ -1,0 +1,19 @@
+{
+  "compilerOptions": {
+    "strict": true,
+    "target": "ESNext",
+    "module": "ESNext",
+    "moduleResolution": "bundler",
+    "jsx": "react-jsx",
+    "jsxImportSource": "astro",
+    "types": ["astro/client"],
+    "baseUrl": ".",
+    "paths": {
+      "~/*": ["src/*"]
+    },
+    "noEmit": true,
+    "skipLibCheck": true
+  },
+  "include": ["src/**/*", "astro.config.*"],
+  "exclude": ["node_modules", "dist"]
+}
