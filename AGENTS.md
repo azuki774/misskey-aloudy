@@ -40,10 +40,10 @@ misskey-aloudy/
 
 ### Development
 
-- Use `bun` for all package management (install, add, remove, run).
-- Use `flake.nix` for the development shell.
-- **Prefer running tools through Nix/direnv**: The repo includes `.envrc` with `use flake`. Run `direnv allow` once per checkout (or per worktree) to activate the Nix dev shell automatically. After that, run repo tools directly (e.g., `bun install`, `bun run dev`, `bun run lint`) without prefixing commands with `nix develop -c`.
-- `nix develop -c <command>` is acceptable for one-off invocations from outside a direnv-activated shell, but in-session work should rely on the active shell.
+- **Use Nix dev shell for all commands**: Run `nix develop` to enter the shell, or use `direnv allow` to auto-activate.
+- **Never use system-installed Bun**: Always use the Bun provided by Nix dev shell.
+- When in the dev shell, run commands directly: `bun install`, `bun run dev`, `bun run lint`.
+- For one-off commands without entering the shell: `nix develop -c bun <command>`.
 - Run the linter before every commit. Pre-commit hooks enforce this.
 
 ### Code Style
