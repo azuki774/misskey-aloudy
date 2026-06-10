@@ -1,5 +1,19 @@
 # Product Requirements Document — misskey-aloudy
 
+## Table of Contents
+
+- [Overview](#overview)
+- [Goals](#goals)
+- [Target Users](#target-users)
+- [Functional Requirements](#functional-requirements)
+  - [MVP (Phase 1)](#mvp-phase-1)
+  - [Phase 2](#phase-2)
+  - [Out of Scope](#out-of-scope)
+- [Non-Functional Requirements](#non-functional-requirements)
+- [Technical Architecture](#technical-architecture)
+- [Deployment](#deployment)
+- [Roadmap](#roadmap)
+
 ## Overview
 
 A web application that reads Misskey timelines aloud using VoiceVox text-to-speech. Users can listen to their timeline while multitasking.
