@@ -6,11 +6,11 @@ const navLinks = [
 const currentPath = Astro.url.pathname;
 ---
 
-<header class="bg-white/80 dark:bg-gray-900/80 backdrop-blur border-b border-gray-200 dark:border-gray-800 sticky top-0 z-10">
+<header class="bg-bg-subtle backdrop-blur border-b border-border sticky top-0 z-10">
   <div class="container mx-auto flex items-center justify-between gap-4 px-4 py-3 sm:py-4">
     <a
       href="/"
-      class="text-lg font-semibold tracking-tight text-gray-900 dark:text-gray-100 hover:opacity-80 transition-opacity"
+      class="text-lg font-semibold tracking-tight text-fg hover:opacity-80 transition-opacity"
     >
       misskey-aloudy
     </a>
@@ -30,8 +30,8 @@ const currentPath = Astro.url.pathname;
                   class:list={[
                     'inline-block rounded-md px-3 py-1.5 transition-colors',
                     isActive
-                      ? 'bg-gray-900 text-white dark:bg-gray-100 dark:text-gray-900'
-                      : 'text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800',
+                      ? 'bg-accent-bg text-accent-fg'
+                      : 'text-fg-subtle hover:bg-accent-hover',
                   ]}
                 >
                   {label}
