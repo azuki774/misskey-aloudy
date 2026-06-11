@@ -9,4 +9,14 @@ export default [
   {
     ignores: ["dist/", "node_modules/", ".astro/", ".worktrees/"],
   },
+  {
+    files: ["astro.config.mjs", "tailwind.config.mjs"],
+    languageOptions: {
+      ecmaVersion: "latest",
+      sourceType: "module",
+      globals: {
+        process: "readonly",
+      },
+    },
+  },
 ];
