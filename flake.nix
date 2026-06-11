@@ -19,9 +19,14 @@
             git
           ];
 
+          # Pinned application defaults. Override per-shell with:
+          #   SITE_URL=https://example.com bun run build
+          SITE_URL = "http://localhost:3000";
+
           shellHook = ''
             echo "misskey-aloudy dev shell"
             echo "Run 'bun install' to install dependencies"
+            echo "SITE_URL=$SITE_URL"
           '';
         };
       }
