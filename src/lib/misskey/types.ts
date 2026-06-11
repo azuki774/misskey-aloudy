@@ -146,8 +146,12 @@ export type GlobalTimelineParams = {
 	withFiles?: boolean;
 };
 
+export type ConnectBody =
+	| { channel: 'globalTimeline'; id: string; params?: GlobalTimelineParams }
+	| { channel: string; id: string; params?: Record<string, unknown> };
+
 export type ClientMessage =
-	| { type: 'connect'; body: { channel: string; id: string; params?: GlobalTimelineParams } }
+	| { type: 'connect'; body: ConnectBody }
 	| { type: 'disconnect'; body: { id: string } }
 	| { type: 'ch'; body: { id: string; type: string; body?: unknown } };
 
@@ -158,4 +162,5 @@ export type GlobalTimelineNoteEvent = {
 };
 
 export type ServerMessage =
-	| { type: 'channel'; body: { id: string; type: string; body: unknown } };
+	| { type: 'channel'; body: { id: string; type: string; body: unknown } }
+	| { type: string; body?: unknown };
