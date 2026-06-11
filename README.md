@@ -1,5 +1,7 @@
 # misskey-aloudy
 
+[![CI](https://github.com/azuki774/misskey-aloudy/actions/workflows/ci.yml/badge.svg)](https://github.com/azuki774/misskey-aloudy/actions/workflows/ci.yml)
+
 A web application that reads Misskey timelines aloud using VoiceVox text-to-speech. Listen to your timeline while multitasking.
 
 ## Features
