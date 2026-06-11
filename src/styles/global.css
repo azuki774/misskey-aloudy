@@ -4,6 +4,30 @@
 
 :root {
   color-scheme: light dark;
+
+  --color-bg: #f9fafb;
+  --color-bg-subtle: rgb(255 255 255 / 0.8);
+  --color-fg: #111827;
+  --color-fg-subtle: #1f2937;
+  --color-fg-muted: #6b7280;
+  --color-border: #e5e7eb;
+  --color-accent-bg: #111827;
+  --color-accent-fg: #ffffff;
+  --color-accent-hover: #f3f4f6;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --color-bg: #030712;
+    --color-bg-subtle: rgb(17 24 39 / 0.8);
+    --color-fg: #f3f4f6;
+    --color-fg-subtle: #d1d5db;
+    --color-fg-muted: #9ca3af;
+    --color-border: #1f2937;
+    --color-accent-bg: #f3f4f6;
+    --color-accent-fg: #111827;
+    --color-accent-hover: #1f2937;
+  }
 }
 
 html {
