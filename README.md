@@ -13,21 +13,24 @@ A web application that reads Misskey timelines aloud using VoiceVox text-to-spee
 
 ## Quick Start
 
+The dev environment is provided by the Nix flake (`flake.nix`) and activated automatically by [direnv](https://direnv.net/) via `.envrc` (`use flake`).
+
 ```bash
-# Enter Nix dev shell (or use direnv allow for auto-activation)
-nix develop
+# Prerequisite: direnv must be installed and its shell hook enabled.
+# In zsh: eval "$(direnv hook zsh)" in ~/.zshrc.
 
-# Install dependencies
+# 1. Authorize the .envrc in this repository (first time only)
+direnv allow
+
+# 2. Once direnv has activated the shell, run commands directly:
 bun install
-
-# Start development server
 bun run dev
-
-# Build for production
 bun run build
 ```
 
-> **Note**: Always use the Nix dev shell for development. The system-installed Bun may not work due to CPU instruction set requirements (AVX2).
+> **Note**: direnv activates `devShells.default` from `flake.nix`, which provides the `bun` binary. Do not use a system-installed Bun (CPU instruction set incompatibility, AVX2).
+>
+> Never run `nix develop` manually, and never use `nix develop -c bun <command>` one-liners — direnv has already exported the dev shell into your environment.
 
 ## Documentation
 
