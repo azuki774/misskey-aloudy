@@ -1,0 +1,22 @@
+name: Labeler
+
+on:
+  pull_request_target:
+
+permissions:
+  contents: read
+  pull-requests: write
+
+jobs:
+  labeler:
+    name: Label PRs
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
+
+      - name: Apply labels
+        uses: actions/labeler@f27b608878404679385c85cfa523b85ccb86e213 # v6.1.0
+        with:
+          configuration-path: .github/labeler.yml
+          token: ${{ secrets.GITHUB_TOKEN }}

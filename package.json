@@ -7,6 +7,7 @@
     "build": "astro build",
     "preview": "astro preview",
     "lint": "eslint . --ext .ts,.tsx,.astro",
+    "typecheck": "tsc --noEmit",
     "prepare": "husky"
   },
   "dependencies": {
