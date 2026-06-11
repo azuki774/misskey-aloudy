@@ -1,3 +1,5 @@
 ci:
-  - .github/workflows/**
-  - .github/labeler.yml
+  - changed-files:
+      - any-glob-to-any-file:
+          - .github/workflows/**
+          - .github/labeler.yml

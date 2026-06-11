@@ -7,6 +7,6 @@ export default [
   ...tseslint.configs.recommended,
   ...astroeslint.configs.recommended,
   {
-    ignores: ["dist/", "node_modules/", ".astro/"],
+    ignores: ["dist/", "node_modules/", ".astro/", ".worktrees/"],
   },
 ];
