@@ -36,3 +36,6 @@ result-*
 
 # Bun
 bun.lockb
+
+# Worktrees
+.worktrees/
