@@ -11,3 +11,15 @@ export class VoiceVoxError extends Error {
 		this.status = status;
 	}
 }
+
+export type VoiceVoxPlayerErrorKind = "empty_buffer" | "media_error" | "unsupported_environment";
+
+export class VoiceVoxPlayerError extends Error {
+	readonly kind: VoiceVoxPlayerErrorKind;
+
+	constructor(message: string, kind: VoiceVoxPlayerErrorKind) {
+		super(message);
+		this.name = "VoiceVoxPlayerError";
+		this.kind = kind;
+	}
+}
