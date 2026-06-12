@@ -40,10 +40,10 @@ misskey-aloudy/
 
 ### Development
 
-- **Use Nix dev shell for all commands**: Run `nix develop` to enter the shell, or use `direnv allow` to auto-activate.
-- **Never use system-installed Bun**: Always use the Bun provided by Nix dev shell.
-- When in the dev shell, run commands directly: `bun install`, `bun run dev`, `bun run lint`.
-- For one-off commands without entering the shell: `nix develop -c bun <command>`.
+- **All commands run inside the direnv-activated shell** (the directory's `.envrc` uses `use flake`, so the flake's `devShells.default` is exported into the environment). Never invoke `nix develop` manually, and never use `nix develop -c` one-liners.
+- **Prerequisites**: `direnv` must be installed and its shell hook enabled (e.g. `eval "$(direnv hook zsh)"` in `~/.zshrc`). After cloning, run `direnv allow` once in the repository root to authorize `.envrc`. Re-run `direnv reload` after editing `.envrc` or `flake.nix`.
+- **Never use system-installed Bun**: Always use the Bun provided by the flake's dev shell. The system Bun is incompatible due to CPU instruction set requirements (AVX2).
+- Once direnv has activated the shell, run commands directly: `bun install`, `bun run dev`, `bun run lint`, `bun run build`.
 - Run the linter before every commit. Pre-commit hooks enforce this.
 
 ### Code Style
