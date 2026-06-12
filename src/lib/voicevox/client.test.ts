@@ -40,12 +40,12 @@ function bufferResponse(body: ArrayBuffer, status = 200): Response {
 }
 
 beforeEach(() => {
-	delete process.env.PUBLIC_VOICEVOX_URL;
+	delete process.env.VOICEVOX_URL;
 });
 
 afterEach(() => {
 	globalThis.fetch = originalFetch;
-	delete process.env.PUBLIC_VOICEVOX_URL;
+	delete process.env.VOICEVOX_URL;
 });
 
 describe("audioQuery", () => {
@@ -207,8 +207,8 @@ describe("synthesize", () => {
 		expect(url).toContain(`speaker=${DEFAULT_SPEAKER}`);
 	});
 
-	it("uses PUBLIC_VOICEVOX_URL from process.env (Bun maps this to import.meta.env) when baseUrl is not provided", async () => {
-		process.env.PUBLIC_VOICEVOX_URL = "http://env-host:50021";
+	it("uses VOICEVOX_URL from process.env (Bun maps this to import.meta.env) when baseUrl is not provided", async () => {
+		process.env.VOICEVOX_URL = "http://env-host:50021";
 		const calls = mockFetch(() => jsonResponse(sampleQuery));
 
 		await synthesize({ text: "test", speaker: 1 });

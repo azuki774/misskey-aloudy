@@ -1,7 +1,7 @@
 /// <reference types="astro/client" />
 
 interface ImportMetaEnv {
-	readonly PUBLIC_VOICEVOX_URL?: string;
+	readonly VOICEVOX_URL?: string;
 }
 
 interface ImportMeta {

@@ -30,7 +30,9 @@ bun run build
 
 ## VoiceVox Engine
 
-This app depends on a running [VoiceVox](https://voicevox.github.io/voicevox_engine/) engine to synthesize speech. The engine runs as a separate process on `http://localhost:50021` by default (configurable via `PUBLIC_VOICEVOX_URL` in `.env`).
+This app depends on a running [VoiceVox](https://voicevox.github.io/voicevox_engine/) engine to synthesize speech. The engine runs as a separate process on `http://localhost:50021` by default (configurable via `VOICEVOX_URL` in `.env`).
+
+Note: `VOICEVOX_URL` is a server-only variable (no `PUBLIC_` prefix). The value is read on the server inside `src/lib/voicevox/client.ts` and never inlined into browser bundles. If you have an existing `.env` from before this rename, change `PUBLIC_VOICEVOX_URL` to `VOICEVOX_URL`.
 
 ### Running VoiceVox with docker compose
 
