@@ -28,9 +28,46 @@ bun run dev
 bun run build
 ```
 
+## VoiceVox Engine
+
+This app depends on a running [VoiceVox](https://voicevox.github.io/voicevox_engine/) engine to synthesize speech. The engine runs as a separate process on `http://localhost:50021` by default (configurable via `PUBLIC_VOICEVOX_URL` in `.env`).
+
+### Running VoiceVox with docker compose
+
+```bash
+docker compose up -d voicevox
+```
+
+This starts the official `voicevox/voicevox_engine:cpu-latest` image and exposes it on port `50021`.
+
+### Running VoiceVox directly
+
+```bash
+docker run --rm -p 50021:50021 voicevox/voicevox_engine:cpu-latest
+```
+
+### Synthesizing speech via the API
+
+```bash
+curl -X POST http://localhost:3000/api/speech \
+  -H "Content-Type: application/json" \
+  -d '{"text":"こんにちは","speaker":1}' \
+  --output hello.wav
+```
+
+The response is a `audio/wav` body. The `speaker` field is optional and defaults to `1` (四国めたん ノーマル).
+
 > **Note**: direnv activates `devShells.default` from `flake.nix`, which provides the `bun` binary. Do not use a system-installed Bun (CPU instruction set incompatibility, AVX2).
 >
 > Never run `nix develop` manually, and never use `nix develop -c bun <command>` one-liners — direnv has already exported the dev shell into your environment.
+
+## Testing
+
+```bash
+bun test
+```
+
+Unit tests live next to source files (`*.test.ts`) and use `bun:test`.
 
 ## Documentation
 

@@ -6,7 +6,8 @@
     "moduleResolution": "bundler",
     "jsx": "react-jsx",
     "jsxImportSource": "astro",
-    "types": ["astro/client"],
+    "types": ["astro/client", "bun"],
+    "allowImportingTsExtensions": true,
     "baseUrl": ".",
     "paths": {
       "~/*": ["src/*"]
