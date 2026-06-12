@@ -12,9 +12,13 @@ export { DEFAULT_BASE_URL, DEFAULT_SPEAKER };
 
 export function resolveBaseUrl(override?: string): string {
 	if (override && override.length > 0) return override.replace(/\/+$/, "");
-	const fromEnv = (import.meta as { env?: Record<string, string | undefined> }).env?.PUBLIC_VOICEVOX_URL;
+	const fromEnv = import.meta.env.PUBLIC_VOICEVOX_URL;
 	if (typeof fromEnv === "string" && fromEnv.length > 0) return fromEnv.replace(/\/+$/, "");
 	return DEFAULT_BASE_URL;
+}
+
+function isAbortError(err: unknown): boolean {
+	return err instanceof Error && err.name === "AbortError";
 }
 
 async function safeJson(res: Response): Promise<unknown> {
@@ -32,6 +36,7 @@ export async function audioQuery(options: AudioQueryOptions): Promise<AudioQuery
 	try {
 		res = await fetch(url, { method: "POST", signal: options.signal });
 	} catch (err) {
+		if (isAbortError(err)) throw err;
 		throw new VoiceVoxError(
 			`Failed to connect to VoiceVox at ${baseUrl}: ${(err as Error).message}`,
 			"connection",
@@ -60,6 +65,7 @@ export async function synthesis(options: SynthesisOptions): Promise<ArrayBuffer>
 			signal: options.signal,
 		});
 	} catch (err) {
+		if (isAbortError(err)) throw err;
 		throw new VoiceVoxError(
 			`Failed to connect to VoiceVox at ${baseUrl}: ${(err as Error).message}`,
 			"connection",

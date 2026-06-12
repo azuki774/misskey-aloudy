@@ -40,12 +40,12 @@ function bufferResponse(body: ArrayBuffer, status = 200): Response {
 }
 
 beforeEach(() => {
-	process.env.PUBLIC_VOICEVOX_URL = "";
+	delete process.env.PUBLIC_VOICEVOX_URL;
 });
 
 afterEach(() => {
 	globalThis.fetch = originalFetch;
-	process.env.PUBLIC_VOICEVOX_URL = "";
+	delete process.env.PUBLIC_VOICEVOX_URL;
 });
 
 describe("audioQuery", () => {
@@ -109,6 +109,18 @@ describe("audioQuery", () => {
 		await expect(audioQuery({ text: "test", speaker: 1, baseUrl: "http://vv.test:50021" })).rejects.toMatchObject({
 			kind: "connection",
 		});
+	});
+
+	it("rethrows AbortError unchanged so callers can distinguish cancellation from connection failure", async () => {
+		const abortError = new Error("aborted");
+		abortError.name = "AbortError";
+		globalThis.fetch = mock(async () => {
+			throw abortError;
+		}) as unknown as typeof fetch;
+
+		const controller = new AbortController();
+		const promise = audioQuery({ text: "test", speaker: 1, baseUrl: "http://vv.test:50021", signal: controller.signal });
+		await expect(promise).rejects.toBe(abortError);
 	});
 });
 
@@ -195,7 +207,7 @@ describe("synthesize", () => {
 		expect(url).toContain(`speaker=${DEFAULT_SPEAKER}`);
 	});
 
-	it("uses PUBLIC_VOICEVOX_URL env var when baseUrl is not provided", async () => {
+	it("uses PUBLIC_VOICEVOX_URL from process.env (Bun maps this to import.meta.env) when baseUrl is not provided", async () => {
 		process.env.PUBLIC_VOICEVOX_URL = "http://env-host:50021";
 		const calls = mockFetch(() => jsonResponse(sampleQuery));
 
