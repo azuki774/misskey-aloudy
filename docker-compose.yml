@@ -1,6 +1,6 @@
 services:
   voicevox:
-    image: voicevox/voicevox_engine:cpu-latest
+    image: docker.io/voicevox/voicevox_engine:cpu-latest
     container_name: misskey-aloudy-voicevox
     ports:
       - "50021:50021"
