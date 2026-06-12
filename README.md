@@ -69,6 +69,23 @@ bun test
 
 Unit tests live next to source files (`*.test.ts`) and use `bun:test`.
 
+## Manual Verification
+
+A `Makefile` is provided for end-to-end smoke tests against the production build. These are useful when you want to verify the `POST /api/speech` endpoint behaves as expected without writing test code.
+
+```bash
+# No VoiceVox needed: builds the app, boots the production server on
+# PORT=4398, and asserts 400/400/400/502 responses from /api/speech.
+make smoke
+
+# Real audio synthesis. Requires a running VoiceVox engine.
+docker compose up -d voicevox
+make with-voicevox            # synthesizes 'こんにちは' to /tmp/misskey-aloudy-smoke.wav
+make play-audio               # plays the WAV with ffplay / aplay / afplay
+```
+
+Useful variables: `PORT=...`, `HOST=...`, `TEXT=...`, `SPEAKER=...`, `AUDIO_FILE=...`. See `make help` for the full list.
+
 ## Documentation
 
 - [Product Requirements](docs/requirements.md) — Feature specifications and roadmap
