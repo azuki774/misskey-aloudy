@@ -23,9 +23,9 @@ The dev environment is provided by the Nix flake (`flake.nix`) and activated aut
 direnv allow
 
 # 2. Once direnv has activated the shell, run commands directly:
-bun install
-bun run dev
-bun run build
+pnpm install
+pnpm run dev
+pnpm run build
 ```
 
 ## VoiceVox Engine
@@ -59,17 +59,17 @@ curl -X POST http://localhost:3000/api/speech \
 
 The response is a `audio/wav` body. The `speaker` field is optional and defaults to `1` (四国めたん ノーマル).
 
-> **Note**: direnv activates `devShells.default` from `flake.nix`, which provides the `bun` binary. Do not use a system-installed Bun (CPU instruction set incompatibility, AVX2).
+> **Note**: direnv activates `devShells.default` from `flake.nix`, which provides the Node 24 and pnpm binaries. The `packageManager` field in `package.json` pins the pnpm version.
 >
-> Never run `nix develop` manually, and never use `nix develop -c bun <command>` one-liners — direnv has already exported the dev shell into your environment.
+> Never run `nix develop` manually — direnv has already exported the dev shell into your environment.
 
 ## Testing
 
 ```bash
-bun test
+pnpm test
 ```
 
-Unit tests live next to source files (`*.test.ts`) and use `bun:test`.
+Unit tests live next to source files (`*.test.ts`) and use `vitest`.
 
 ## Manual Verification
 
@@ -96,7 +96,8 @@ Useful variables: `PORT=...`, `HOST=...`, `TEXT=...`, `SPEAKER=...`, `AUDIO_FILE
 ## Tech Stack
 
 - **Framework**: Astro
-- **Runtime**: Bun
+- **Runtime**: Node 24
+- **Package Manager**: pnpm
 - **TTS Engine**: VoiceVox
 - **Dev Environment**: Nix flakes with direnv
 

@@ -2,7 +2,7 @@
 
 ## Overview
 
-A website that reads out Misskey's timeline. Built with Astro and Bun, using Nix (flake.nix) for the development environment.
+A website that reads out Misskey's timeline. Built with Astro and Node 24, using Nix (flake.nix) for the development environment.
 
 ## Project Structure
 
@@ -25,8 +25,8 @@ misskey-aloudy/
 ## Tech Stack
 
 - **Framework**: Astro
-- **Runtime**: Bun
-- **Package Manager**: Bun
+- **Runtime**: Node 24
+- **Package Manager**: pnpm
 - **Dev Environment**: Nix flakes (flake.nix)
 - **Language**: TypeScript
 
@@ -43,8 +43,8 @@ misskey-aloudy/
 
 - **All commands run inside the direnv-activated shell** (the directory's `.envrc` uses `use flake`, so the flake's `devShells.default` is exported into the environment). Never invoke `nix develop` manually, and never use `nix develop -c` one-liners.
 - **Prerequisites**: `direnv` must be installed and its shell hook enabled (e.g. `eval "$(direnv hook zsh)"` in `~/.zshrc`). After cloning, run `direnv allow` once in the repository root to authorize `.envrc`. Re-run `direnv reload` after editing `.envrc` or `flake.nix`.
-- **Never use system-installed Bun**: Always use the Bun provided by the flake's dev shell. The system Bun is incompatible due to CPU instruction set requirements (AVX2).
-- Once direnv has activated the shell, run commands directly: `bun install`, `bun run dev`, `bun run lint`, `bun run build`.
+- **Use pnpm via corepack**: pnpm is pinned in `package.json` (`"packageManager": "pnpm@10.0.0"`). The dev shell's Node 24 includes corepack, so the pinned pnpm is selected automatically. Do not install pnpm via a system package manager.
+- Once direnv has activated the shell, run commands directly: `pnpm install`, `pnpm run dev`, `pnpm run lint`, `pnpm run build`.
 - Run the linter before every commit. Pre-commit hooks enforce this.
 
 ### Code Style
@@ -62,8 +62,10 @@ misskey-aloudy/
 
 | Command              | Description               |
 | -------------------- | ------------------------- |
-| `bun install`        | Install dependencies      |
-| `bun run dev`        | Start dev server          |
-| `bun run build`      | Build for production      |
-| `bun run preview`    | Preview production build  |
-| `bun run lint`       | Run linter                |
+| `pnpm install`       | Install dependencies      |
+| `pnpm run dev`       | Start dev server          |
+| `pnpm run build`     | Build for production      |
+| `pnpm run preview`   | Preview production build  |
+| `pnpm run lint`      | Run linter                |
+| `pnpm test`          | Run unit tests once       |
+| `pnpm run test:watch`| Run unit tests in watch mode |
