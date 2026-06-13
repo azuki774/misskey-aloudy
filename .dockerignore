@@ -1,0 +1,51 @@
+# Dependencies
+node_modules/
+
+# Build output
+dist/
+
+# Astro cache
+.astro/
+
+# Git / GitHub
+.git/
+.github/
+
+# Nix / devenv
+.direnv/
+.devenv/
+devenv.*
+flake.*
+result
+result-*
+
+# Worktrees
+.worktrees/
+
+# Secrets / env
+.env
+.env.*
+!.env.example
+
+# Editor / OS
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+*.log
+*.swp
+*.swo
+*~
+
+# Project meta (not needed for build)
+.husky/
+.gitignore
+.envrc
+Makefile
+LICENSE
+README.md
+docs/
+
+# Docker self-loop
+Dockerfile
+.dockerignore
