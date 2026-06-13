@@ -2,6 +2,8 @@ services:
   voicevox:
     image: docker.io/voicevox/voicevox_engine:cpu-latest
     container_name: misskey-aloudy-voicevox
-    ports:
-      - "50021:50021"
+    # host network is used to avoid rootless podman's netavark setns
+    # issue (kernel 7.0 / netavark 1.16.x); VoiceVox listens on
+    # 0.0.0.0:50021 of the host.
+    network_mode: host
     restart: unless-stopped
