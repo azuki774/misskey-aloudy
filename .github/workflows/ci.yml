@@ -27,7 +27,7 @@ jobs:
       - name: Setup Node
         uses: actions/setup-node@1a4442cacd436585916f0c6523cae7e5a38b0ad3 # v6.4.0
         with:
-          node-version: 24
+          node-version: 24.15.0
           cache: pnpm
 
       - name: Install dependencies
@@ -47,7 +47,7 @@ jobs:
       - name: Setup Node
         uses: actions/setup-node@1a4442cacd436585916f0c6523cae7e5a38b0ad3 # v6.4.0
         with:
-          node-version: 24
+          node-version: 24.15.0
           cache: pnpm
 
       - name: Install dependencies
@@ -70,7 +70,7 @@ jobs:
       - name: Setup Node
         uses: actions/setup-node@1a4442cacd436585916f0c6523cae7e5a38b0ad3 # v6.4.0
         with:
-          node-version: 24
+          node-version: 24.15.0
           cache: pnpm
 
       - name: Install dependencies
@@ -93,7 +93,7 @@ jobs:
       - name: Setup Node
         uses: actions/setup-node@1a4442cacd436585916f0c6523cae7e5a38b0ad3 # v6.4.0
         with:
-          node-version: 24
+          node-version: 24.15.0
           cache: pnpm
 
       - name: Install dependencies

@@ -2,7 +2,7 @@
   "name": "misskey-aloudy",
   "type": "module",
   "private": true,
-  "packageManager": "pnpm@10.0.0",
+  "packageManager": "pnpm@10.34.3+sha512.f2c531b08829d7be7f03c90addc266615f9c5477463e4bf1d275cb263ce9ea57cf0d5599110d94649a9bb3fed9f0b5efcea74a7016b61532a24cb9ad87860c1d",
   "scripts": {
     "dev": "astro dev",
     "build": "astro build",
@@ -20,7 +20,7 @@
     "tailwindcss": "^3.4.0"
   },
   "devDependencies": {
-    "@types/node": "^24.0.0",
+    "@types/node": "24.13.2",
     "@typescript-eslint/eslint-plugin": "^8.0.0",
     "@typescript-eslint/parser": "^8.0.0",
     "eslint": "^9.0.0",
