@@ -88,14 +88,16 @@ make play-audio               # plays the WAV with ffplay / aplay / afplay
 
 Useful variables: `PORT=...`, `HOST=...`, `TEXT=...`, `SPEAKER=...`, `AUDIO_FILE=...`. See `make help` for the full list.
 
-### Test page
+### Test pages
 
-For interactive manual testing, start the dev server (`pnpm run dev`) and open <http://localhost:3000/test-voicevox>. The page lets you type text, click 合成して再生 to hear the synthesized audio, and 停止 to terminate playback. It surfaces a clear error when VoiceVox is offline. This is a developer-facing tool, not part of the user-facing product.
+- **VoiceVox test page** (issue #10): start the dev server (`pnpm run dev`) and open <http://localhost:3000/test-voicevox>. Lets you type text, click 合成して再生 to hear the synthesized audio, and 停止 to terminate playback. Surfaces a clear error when VoiceVox is offline.
+- **Misskey timeline page** (issue #15): the home route, <http://localhost:3000/>. Reads `MISSKEY_INSTANCE_URL` from `.env` and renders it as a readonly input. Click 接続 to subscribe to the global timeline; received notes stream into a list in real time. The page is display-only — no audio — because the TTS pipeline (#19) has not been built yet. This is a developer-facing tool, not part of the user-facing product.
 
 ## Documentation
 
 - [Product Requirements](docs/requirements.md) — Feature specifications and roadmap
-- [VoiceVox Test Page Design](docs/voicevox.md) — Design notes for the test page (issue #10)
+- [VoiceVox Test Page Design](docs/voicevox.md) — Design notes for the VoiceVox test page (issue #10)
+- [Misskey Timeline Page Design](docs/timeline-page.md) — Design notes for the home page (issue #15)
 - [Project Rules](AGENTS.md) — Development guidelines and conventions
 
 ## Tech Stack
