@@ -80,10 +80,11 @@ Users who want to listen to Misskey timelines while doing other tasks (cooking, 
 │       │                                     │
 │       │ HTTP                                │
 │       ▼                                     │
-│  ┌──────────┐                               │
-│  │ VoiceVox │                               │
-│  │   API    │                               │
-│  └──────────┘                               │
+│  ┌──────────────────┐                       │
+│  │  App Server      │                       │
+│  │  (Astro/Node 24) │                       │
+│  │   /api/speech    │─── HTTP ──▶ VoiceVox  │
+│  └──────────────────┘                       │
 └─────────────────────────────────────────────┘
 ```
 
@@ -91,16 +92,19 @@ Users who want to listen to Misskey timelines while doing other tasks (cooking, 
 
 1. Browser connects to Misskey instance via WebSocket
 2. New notes arrive in real-time
-3. Browser sends note text to VoiceVox API
-4. VoiceVox returns audio data
-5. Browser plays audio
+3. Browser POSTs note text to the app's own `/api/speech` endpoint
+4. The app server calls VoiceVox `/audio_query` and `/synthesis` and returns the resulting `audio/wav` bytes to the browser
+5. Browser plays the audio via the `VoiceVoxPlayer`
+
+> The browser does not call VoiceVox directly in the MVP. All synthesis is mediated by the app server so that input validation, secrets management (`VOICEVOX_URL` stays server-side), and future auth live in one place.
 
 ### Components
 
 | Component | Technology | Purpose |
 |-----------|------------|---------|
-| Frontend | Astro + TypeScript | Web UI, WebSocket client, VoiceVox integration |
-| TTS Engine | VoiceVox | Text-to-speech synthesis |
+| Frontend | Astro + TypeScript | Web UI, WebSocket client, calls `/api/speech` for synthesis |
+| App Server | Astro (Node 24, server output) | Hosts the API routes (`/api/speech`) and proxies to VoiceVox |
+| TTS Engine | VoiceVox | Text-to-speech synthesis; reached only via the app server in the MVP |
 | Runtime | Node 24 | JavaScript runtime |
 | Package Manager | pnpm | Dependency management |
 | Container | Docker | Application packaging |
