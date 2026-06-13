@@ -10,6 +10,14 @@ export default [
     ignores: ["dist/", "node_modules/", ".astro/", ".worktrees/"],
   },
   {
+    rules: {
+      "@typescript-eslint/no-unused-vars": [
+        "error",
+        { argsIgnorePattern: "^_", varsIgnorePattern: "^_", caughtErrorsIgnorePattern: "^_" },
+      ],
+    },
+  },
+  {
     files: ["astro.config.mjs", "tailwind.config.mjs"],
     languageOptions: {
       ecmaVersion: "latest",
