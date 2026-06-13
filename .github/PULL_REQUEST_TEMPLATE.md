@@ -12,8 +12,8 @@
 
 <!-- How was this change verified? Include commands run, scenarios tested, and their results. -->
 
-- [ ] `bun run lint` (check code style)
-- [ ] `bun run build` (verify production build)
+- [ ] `pnpm run lint` (check code style)
+- [ ] `pnpm run build` (verify production build)
 - [ ] Manual verification (describe what you ran and what you saw)
 
 ## Note
