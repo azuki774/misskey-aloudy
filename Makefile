@@ -73,7 +73,7 @@ with-voicevox: build kill-server
 		exit 1; \
 	fi
 	@if [ -f $(PID_FILE) ]; then rm -f $(PID_FILE); fi
-	@PORT=$(PORT) HOST=$(HOST) PUBLIC_VOICEVOX_URL=http://$(HOST):50021 nohup node dist/server/entry.mjs > $(LOG_FILE) 2>&1 & \
+	@PORT=$(PORT) HOST=$(HOST) VOICEVOX_URL=http://$(HOST):50021 nohup node dist/server/entry.mjs > $(LOG_FILE) 2>&1 & \
 		echo $$! > $(PID_FILE); \
 		disown
 	@for i in 1 2 3 4 5 6 7 8 9 10; do \
