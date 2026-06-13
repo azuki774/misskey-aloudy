@@ -207,7 +207,7 @@ describe("synthesize", () => {
 		expect(url).toContain(`speaker=${DEFAULT_SPEAKER}`);
 	});
 
-	it("uses VOICEVOX_URL from process.env (Bun maps this to import.meta.env) when baseUrl is not provided", async () => {
+	it("uses VOICEVOX_URL from process.env when baseUrl is not provided", async () => {
 		process.env.VOICEVOX_URL = "http://env-host:50021";
 		const calls = mockFetch(() => jsonResponse(sampleQuery));
 
