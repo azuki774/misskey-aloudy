@@ -43,7 +43,7 @@ misskey-aloudy/
 
 - **All commands run inside the direnv-activated shell** (the directory's `.envrc` uses `use flake`, so the flake's `devShells.default` is exported into the environment). Never invoke `nix develop` manually, and never use `nix develop -c` one-liners.
 - **Prerequisites**: `direnv` must be installed and its shell hook enabled (e.g. `eval "$(direnv hook zsh)"` in `~/.zshrc`). After cloning, run `direnv allow` once in the repository root to authorize `.envrc`. Re-run `direnv reload` after editing `.envrc` or `flake.nix`.
-- **Use pnpm via corepack**: pnpm is pinned in `package.json` (`"packageManager": "pnpm@10.0.0"`). The dev shell's Node 24 includes corepack, so the pinned pnpm is selected automatically. Do not install pnpm via a system package manager.
+- **Use pnpm via corepack**: pnpm is pinned in `package.json` (`"packageManager": "pnpm@10.34.3"`). The dev shell's Node 24 includes corepack, so the pinned pnpm is selected automatically. Do not install pnpm via a system package manager.
 - Once direnv has activated the shell, run commands directly: `pnpm install`, `pnpm run dev`, `pnpm run lint`, `pnpm run build`.
 - Run the linter before every commit. Pre-commit hooks enforce this.
 
