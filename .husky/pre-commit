@@ -1,1 +1,1 @@
-pnpm run lint
+corepack pnpm@10.34.3 run lint

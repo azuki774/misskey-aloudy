@@ -1,0 +1,55 @@
+---
+import Layout from "../layouts/Layout.astro";
+---
+
+<Layout title="VoiceVox テスト" description="VoiceVox 連携の動作確認用ページ">
+  <main class="container mx-auto px-4 py-8">
+    <h1 class="text-2xl font-semibold tracking-tight">VoiceVox テスト</h1>
+    <p class="mt-2 text-fg-muted">
+      テキストを入力して「合成して再生」を押すと、VoiceVox エンジンで合成された音声が再生されます。
+      VoiceVox が起動していない場合はエラーメッセージが表示されます。
+    </p>
+
+    <div class="mt-6">
+      <label for="text" class="block text-sm font-medium">テキスト</label>
+      <textarea
+        id="text"
+        rows="4"
+        maxlength="1000"
+        placeholder="こんにちは"
+        class="mt-1 w-full rounded-md border border-border bg-bg p-3 text-base shadow-sm focus:border-accent-bg focus:outline-none focus:ring-1 focus:ring-accent-bg"
+      ></textarea>
+    </div>
+
+    <div class="mt-4 flex gap-2">
+      <button
+        id="synthesize"
+        type="button"
+        class="rounded-md bg-accent-bg px-4 py-2 text-sm font-medium text-accent-fg transition-opacity hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50"
+      >
+        合成して再生
+      </button>
+      <button
+        id="stop"
+        type="button"
+        disabled
+        class="rounded-md border border-border bg-bg px-4 py-2 text-sm font-medium text-fg transition-colors hover:bg-accent-hover disabled:cursor-not-allowed disabled:opacity-50"
+      >
+        停止
+      </button>
+    </div>
+
+    <p id="status" class="mt-4 text-sm text-fg-muted" aria-live="polite"></p>
+    <p
+      id="error"
+      class="mt-2 hidden text-sm text-red-600 dark:text-red-400"
+      aria-live="polite"
+      role="alert"
+    >
+    </p>
+  </main>
+</Layout>
+
+<script>
+  import "../scripts/test-voicevox.ts";
+</script>

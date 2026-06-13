@@ -88,9 +88,14 @@ make play-audio               # plays the WAV with ffplay / aplay / afplay
 
 Useful variables: `PORT=...`, `HOST=...`, `TEXT=...`, `SPEAKER=...`, `AUDIO_FILE=...`. See `make help` for the full list.
 
+### Test page
+
+For interactive manual testing, start the dev server (`pnpm run dev`) and open <http://localhost:3000/test-voicevox>. The page lets you type text, click 合成して再生 to hear the synthesized audio, and 停止 to terminate playback. It surfaces a clear error when VoiceVox is offline. This is a developer-facing tool, not part of the user-facing product.
+
 ## Documentation
 
 - [Product Requirements](docs/requirements.md) — Feature specifications and roadmap
+- [VoiceVox Test Page Design](docs/voicevox.md) — Design notes for the test page (issue #10)
 - [Project Rules](AGENTS.md) — Development guidelines and conventions
 
 ## Tech Stack
