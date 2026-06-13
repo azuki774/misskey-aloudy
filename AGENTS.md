@@ -37,6 +37,7 @@ misskey-aloudy/
 - All documentation and comments MUST be written in English.
 - Do NOT commit secrets, API keys, tokens, or credentials. Use `.env` files locally (see `.env.example`).
 - Do NOT commit `.env` files — they are gitignored.
+- Files under `docs/superpowers/` are local-only working notes (e.g. brainstorming specs, design notes). It is fine to create them locally for thinking, but they MUST NOT be committed, pushed, or included in pull requests. Add them to `.git/info/exclude` or simply leave them untracked.
 
 ### Development
 
