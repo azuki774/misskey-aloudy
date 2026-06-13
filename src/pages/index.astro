@@ -1,10 +1,81 @@
 ---
-import Layout from '../layouts/Layout.astro';
+import Layout from "../layouts/Layout.astro";
+
+const FALLBACK_INSTANCE_URL = "https://misskey.io";
+const rawInstanceUrl = import.meta.env.MISSKEY_INSTANCE_URL;
+const instanceUrl =
+	typeof rawInstanceUrl === "string" && rawInstanceUrl.length > 0
+		? rawInstanceUrl
+		: FALLBACK_INSTANCE_URL;
+if (import.meta.env.DEV && (!rawInstanceUrl || rawInstanceUrl === FALLBACK_INSTANCE_URL)) {
+	console.warn(
+		`[index] MISSKEY_INSTANCE_URL is not set; falling back to ${FALLBACK_INSTANCE_URL}`,
+	);
+}
 ---
 
-<Layout title="misskey-aloudy">
+<Layout title="misskey-aloudy" description="Misskey のタイムラインを VoiceVox で読み上げる Web アプリ">
   <main class="container mx-auto px-4 py-8">
-    <h1 class="text-3xl font-bold mb-4">misskey-aloudy</h1>
-    <p class="text-gray-600">Misskey timeline reader with VoiceVox TTS</p>
+    <h1 class="text-3xl font-bold tracking-tight">misskey-aloudy</h1>
+    <p class="mt-2 text-fg-muted">
+      Misskey インスタンスのグローバルタイムラインを購読し、受信したノートをリアルタイムで表示します。
+    </p>
+
+    <div class="mt-6">
+      <label for="instance-url" class="block text-sm font-medium">
+        Misskey インスタンス
+      </label>
+      <input
+        id="instance-url"
+        type="text"
+        readonly
+        aria-readonly="true"
+        aria-label="Misskey instance URL (read-only)"
+        value={instanceUrl}
+        class="mt-1 w-full rounded-md border border-border bg-bg-subtle p-2 font-mono text-sm shadow-sm"
+      />
+    </div>
+
+    <div class="mt-4 flex gap-2">
+      <button
+        id="connect"
+        type="button"
+        class="rounded-md bg-accent-bg px-4 py-2 text-sm font-medium text-accent-fg transition-opacity hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50"
+      >
+        接続
+      </button>
+      <button
+        id="disconnect"
+        type="button"
+        disabled
+        class="rounded-md border border-border bg-bg px-4 py-2 text-sm font-medium text-fg transition-colors hover:bg-accent-hover disabled:cursor-not-allowed disabled:opacity-50"
+      >
+        切断
+      </button>
+    </div>
+
+    <p class="mt-4 text-sm">
+      状態: <span id="state" class="font-medium">未接続</span>
+    </p>
+    <p
+      id="error"
+      class="mt-2 hidden text-sm text-red-600 dark:text-red-400"
+      role="alert"
+      aria-live="assertive"
+    >
+    </p>
+
+    <h2 class="mt-8 text-lg font-semibold">
+      受信ノート (<span id="count">0</span>)
+    </h2>
+    <ul
+      id="notes"
+      class="mt-2 max-h-[60vh] divide-y divide-border overflow-y-auto rounded-md border border-border"
+    >
+    </ul>
   </main>
 </Layout>
+
+<script>
+  import "../scripts/index.ts";
+</script>
