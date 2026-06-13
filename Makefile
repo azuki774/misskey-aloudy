@@ -28,7 +28,7 @@ help:
 	@echo "Variables: PORT=$(PORT) HOST=$(HOST) TEXT='$(TEXT)' SPEAKER=$(SPEAKER) AUDIO_FILE=$(AUDIO_FILE)"
 
 build:
-	bun run build
+	pnpm run build
 
 kill-server:
 	@if [ -f $(PID_FILE) ]; then \
