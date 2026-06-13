@@ -61,260 +61,307 @@ function makeFile(type: string, overrides: Partial<DriveFile> = {}): DriveFile {
 	return { ...base, ...overrides };
 }
 
-describe("classifyNote", () => {
-	it('returns "renote" when renoteId is set, regardless of CW or text', () => {
-		const note = makeNote({ renoteId: "r1", text: "本文", cw: "ネタバレ" });
-		expect(classifyNote(note)).toBe("renote");
-	});
-
-	it('returns "reply" when replyId is set and renoteId is not', () => {
-		const note = makeNote({ replyId: "rep1", text: "了解" });
-		expect(classifyNote(note)).toBe("reply");
-	});
-
-	it('returns "reply" when both replyId and renoteId are set (reply on a renote)', () => {
-		const note = makeNote({ replyId: "rep1", renoteId: "r1", text: "リプ" });
-		expect(classifyNote(note)).toBe("reply");
-	});
-
-	it('returns "cw" when cw is non-empty and there is no reply/renote', () => {
-		const note = makeNote({ cw: "ネタバレ", text: "本文" });
-		expect(classifyNote(note)).toBe("cw");
-	});
-
-	it('returns "cw" when cw is non-empty and there are no files', () => {
-		const note = makeNote({ cw: "ネタバレ", text: null });
-		expect(classifyNote(note)).toBe("cw");
-	});
-
-	it('returns "normal" when text is non-empty', () => {
-		const note = makeNote({ text: "こんにちは" });
-		expect(classifyNote(note)).toBe("normal");
-	});
-
-	it('returns "normal" when files are attached, even with empty text', () => {
-		const note = makeNote({ text: null, files: [makeFile("image/png")] });
-		expect(classifyNote(note)).toBe("normal");
-	});
-
-	it('returns "empty" when text, files, replyId, renoteId, and cw are all absent/empty', () => {
-		const note = makeNote();
-		expect(classifyNote(note)).toBe("empty");
-	});
-
-	it('returns "empty" for an empty-string text with no files', () => {
-		const note = makeNote({ text: "" });
-		expect(classifyNote(note)).toBe("empty");
-	});
-
-	it('returns "cw" not "normal" when cw is present but text is empty', () => {
-		const note = makeNote({ text: "", cw: "spoiler" });
-		expect(classifyNote(note)).toBe("cw");
-	});
-});
-
-describe("describePrefix", () => {
-	it('formats a renote as "<name> のリノート"', () => {
-		const note = makeNote({ renoteId: "r1", user: makeUser({ name: "アリス" }) });
-		expect(describePrefix(note, "renote")).toBe("アリス のリノート");
-	});
-
-	it('falls back to username when name is null', () => {
-		const note = makeNote({ renoteId: "r1", user: makeUser({ name: null, username: "alice" }) });
-		expect(describePrefix(note, "renote")).toBe("alice のリノート");
-	});
-
-	it('formats a plain reply as "<name> への返信"', () => {
-		const note = makeNote({ replyId: "p", user: makeUser({ name: "ボブ" }) });
-		expect(describePrefix(note, "reply")).toBe("ボブ への返信");
-	});
-
-	it('formats a reply on a renote as "<name> のリノートへの返信"', () => {
-		const note = makeNote({
-			replyId: "p",
-			renoteId: "r",
-			user: makeUser({ name: "キャロル" }),
-		});
-		expect(describePrefix(note, "reply")).toBe("キャロル のリノートへの返信");
-	});
-
-	it('uses username when name is empty string and reply is on a renote', () => {
-		const note = makeNote({
-			replyId: "p",
-			renoteId: "r",
-			user: makeUser({ name: "", username: "carol" }),
-		});
-		expect(describePrefix(note, "reply")).toBe("carol のリノートへの返信");
-	});
-});
-
 describe("preprocessText", () => {
-	it("removes http URLs", () => {
-		expect(preprocessText("見てね https://example.com/foo よろしく")).toBe("見てね よろしく");
-	});
-
-	it("removes multiple URLs", () => {
-		expect(preprocessText("a https://x.io b https://y.io c")).toBe("a b c");
-	});
-
-	it("removes :emoji: shortcodes", () => {
-		expect(preprocessText("Hello :smile: world")).toBe("Hello world");
-	});
-
-	it("keeps Unicode emoji", () => {
-		expect(preprocessText("Hi 👍 there")).toBe("Hi 👍 there");
-	});
-
-	it("collapses multiple whitespace into one", () => {
-		expect(preprocessText("hello\n\n\n  world")).toBe("hello world");
-	});
-
-	it("trims leading and trailing whitespace", () => {
-		expect(preprocessText("   hello   ")).toBe("hello");
-	});
-
-	it("returns empty string for empty input", () => {
-		expect(preprocessText("")).toBe("");
-	});
-
-	it("returns empty string for whitespace-only input", () => {
-		expect(preprocessText("   \n\t  ")).toBe("");
+	it.each([
+		{
+			description: "strips a single URL",
+			input: "見てね https://example.com/foo よろしく",
+			expected: "見てね よろしく",
+		},
+		{
+			description: "strips multiple URLs",
+			input: "a https://x.io b https://y.io c",
+			expected: "a b c",
+		},
+		{
+			description: "strips :emoji: shortcodes",
+			input: "Hello :smile: world",
+			expected: "Hello world",
+		},
+		{
+			description: "keeps Unicode emoji",
+			input: "Hi 👍 there",
+			expected: "Hi 👍 there",
+		},
+		{
+			description: "collapses multiple whitespace into one",
+			input: "hello\n\n\n  world",
+			expected: "hello world",
+		},
+		{
+			description: "trims leading and trailing whitespace",
+			input: "   hello   ",
+			expected: "hello",
+		},
+		{ description: "empty string", input: "", expected: "" },
+		{ description: "whitespace-only", input: "   \n\t  ", expected: "" },
+	])('preprocessText: $description', ({ input, expected }) => {
+		expect(preprocessText(input)).toBe(expected);
 	});
 });
 
 describe("describeAttachments", () => {
-	it("returns empty string for empty array", () => {
-		expect(describeAttachments([])).toBe("");
-	});
-
-	it('returns "画像が投稿されました" for a single image', () => {
-		expect(describeAttachments([makeFile("image/png")])).toBe("画像が投稿されました");
-	});
-
-	it('returns "動画が投稿されました" for a single video', () => {
-		expect(describeAttachments([makeFile("video/mp4")])).toBe("動画が投稿されました");
-	});
-
-	it('returns "音声が投稿されました" for a single audio', () => {
-		expect(describeAttachments([makeFile("audio/mpeg")])).toBe("音声が投稿されました");
-	});
-
-	it('returns "ファイルが投稿されました" for a single file with unknown type', () => {
-		expect(describeAttachments([makeFile("application/pdf")])).toBe("ファイルが投稿されました");
-	});
-
-	it('returns "N 個のファイルが投稿されました" for two or more files', () => {
-		expect(
-			describeAttachments([makeFile("image/png"), makeFile("image/jpeg")]),
-		).toBe("2 個のファイルが投稿されました");
-		expect(
-			describeAttachments([
+	it.each([
+		{ description: "empty array", files: [] as DriveFile[], expected: "" },
+		{
+			description: "single image -> '画像が投稿されました'",
+			files: [makeFile("image/png")],
+			expected: "画像が投稿されました",
+		},
+		{
+			description: "single video -> '動画が投稿されました'",
+			files: [makeFile("video/mp4")],
+			expected: "動画が投稿されました",
+		},
+		{
+			description: "single audio -> '音声が投稿されました'",
+			files: [makeFile("audio/mpeg")],
+			expected: "音声が投稿されました",
+		},
+		{
+			description: "single unknown type -> 'ファイルが投稿されました'",
+			files: [makeFile("application/pdf")],
+			expected: "ファイルが投稿されました",
+		},
+		{
+			description: "two files -> 'N 個のファイルが投稿されました'",
+			files: [makeFile("image/png"), makeFile("image/jpeg")],
+			expected: "2 個のファイルが投稿されました",
+		},
+		{
+			description: "three mixed files",
+			files: [
 				makeFile("image/png"),
 				makeFile("image/jpeg"),
 				makeFile("video/mp4"),
-			]),
-		).toBe("3 個のファイルが投稿されました");
+			],
+			expected: "3 個のファイルが投稿されました",
+		},
+	])('describeAttachments: $description', ({ files, expected }) => {
+		expect(describeAttachments(files)).toBe(expected);
 	});
 });
 
+describe("classifyNote", () => {
+	it.each([
+		{
+			description:
+				"renoteId set with text and CW -> 'renote' (CW ignored, body not read)",
+			overrides: { renoteId: "r1", text: "本文", cw: "ネタバレ" },
+			expected: "renote",
+		},
+		{
+			description: "replyId only -> 'reply'",
+			overrides: { replyId: "rep1", text: "了解" },
+			expected: "reply",
+		},
+		{
+			description: "replyId + renoteId -> 'reply' (reply wins over renote)",
+			overrides: { replyId: "rep1", renoteId: "r1", text: "リプ" },
+			expected: "reply",
+		},
+		{
+			description: "cw non-empty -> 'cw'",
+			overrides: { cw: "ネタバレ", text: "本文" },
+			expected: "cw",
+		},
+		{
+			description: "cw non-empty, text null -> 'cw'",
+			overrides: { cw: "ネタバレ", text: null },
+			expected: "cw",
+		},
+		{
+			description: "text non-empty -> 'normal'",
+			overrides: { text: "こんにちは" },
+			expected: "normal",
+		},
+		{
+			description: "files only, text null -> 'normal'",
+			overrides: { text: null, files: [makeFile("image/png")] },
+			expected: "normal",
+		},
+		{
+			description: "all empty -> 'empty'",
+			overrides: {},
+			expected: "empty",
+		},
+		{
+			description: "text empty string -> 'empty'",
+			overrides: { text: "" },
+			expected: "empty",
+		},
+		{
+			description: "cw present, text empty string -> 'cw'",
+			overrides: { text: "", cw: "spoiler" },
+			expected: "cw",
+		},
+	])('classifyNote: $description', ({ overrides, expected }) => {
+		expect(classifyNote(makeNote(overrides))).toBe(expected);
+	});
+});
+
+describe("describePrefix", () => {
+	type Case = {
+		description: string;
+		kind: "renote" | "reply";
+		overrides: Partial<Note>;
+		expected: string;
+	};
+
+	const cases: Case[] = [
+		{
+			description: "renote with name",
+			kind: "renote",
+			overrides: { renoteId: "r1", user: makeUser({ name: "アリス" }) },
+			expected: "アリス のリノート",
+		},
+		{
+			description: "renote with name=null falls back to username",
+			kind: "renote",
+			overrides: {
+				renoteId: "r1",
+				user: makeUser({ name: null, username: "alice" }),
+			},
+			expected: "alice のリノート",
+		},
+		{
+			description: "plain reply -> '<name> への返信'",
+			kind: "reply",
+			overrides: { replyId: "p", user: makeUser({ name: "ボブ" }) },
+			expected: "ボブ への返信",
+		},
+		{
+			description: "reply on a renote -> '<name> のリノートへの返信'",
+			kind: "reply",
+			overrides: {
+				replyId: "p",
+				renoteId: "r",
+				user: makeUser({ name: "キャロル" }),
+			},
+			expected: "キャロル のリノートへの返信",
+		},
+		{
+			description: "reply on a renote with name='' -> username",
+			kind: "reply",
+			overrides: {
+				replyId: "p",
+				renoteId: "r",
+				user: makeUser({ name: "", username: "carol" }),
+			},
+			expected: "carol のリノートへの返信",
+		},
+	];
+
+	it.each(cases)(
+		"describePrefix: $description",
+		({ kind, overrides, expected }) => {
+			expect(describePrefix(makeNote(overrides), kind)).toBe(expected);
+		},
+	);
+});
+
 describe("toReadingText (integration)", () => {
-	it("renders a normal text note as-is", () => {
-		const note = makeNote({ text: "こんにちは" });
-		expect(toReadingText(note)).toBe("こんにちは");
-	});
-
-	it("renders text with URL and emoji stripped (Acceptance: 通常のテキストノート)", () => {
-		const note = makeNote({
-			text: "見てね https://x.io :smile: よろしく 👍",
-		});
-		expect(toReadingText(note)).toBe("見てね よろしく 👍");
-	});
-
-	it("renders text + image attachment joined with a full stop", () => {
-		const note = makeNote({
-			text: "見て",
-			files: [makeFile("image/png")],
-		});
-		expect(toReadingText(note)).toBe("見て。画像が投稿されました");
-	});
-
-	it('renders an image-only note as "画像が投稿されました" (Acceptance: 画像のみのノート)', () => {
-		const note = makeNote({ text: null, files: [makeFile("image/jpeg")] });
-		expect(toReadingText(note)).toBe("画像が投稿されました");
-	});
-
-	it("renders text + multiple files joined with the N-files message", () => {
-		const note = makeNote({
-			text: "見て",
-			files: [makeFile("image/png"), makeFile("image/jpeg")],
-		});
-		expect(toReadingText(note)).toBe("見て。2 個のファイルが投稿されました");
-	});
-
-	it('renders a CW-only note as "<cw> の注記があります" (Acceptance: CW 付き)', () => {
-		const note = makeNote({ text: "本文", cw: "ネタバレ" });
-		expect(toReadingText(note)).toBe("ネタバレ の注記があります");
-	});
-
-	it("omits the body when CW is present", () => {
-		const note = makeNote({ text: "シークレット本文", cw: "spoiler" });
-		expect(toReadingText(note)).toBe("spoiler の注記があります");
-	});
-
-	it("omits attachments when CW is present", () => {
-		const note = makeNote({
-			text: "本文",
-			cw: "ネタバレ",
-			files: [makeFile("image/png")],
-		});
-		expect(toReadingText(note)).toBe("ネタバレ の注記があります");
-	});
-
-	it('renders a renote as "<name> のリノート"', () => {
-		const note = makeNote({ renoteId: "r1" });
-		expect(toReadingText(note)).toBe("アリス のリノート");
-	});
-
-	it('renders a reply as "<name> への返信" + text', () => {
-		const note = makeNote({ replyId: "p", text: "了解" });
-		expect(toReadingText(note)).toBe("アリス への返信。了解");
-	});
-
-	it('renders a reply on a renote as "<name> のリノートへの返信" + text', () => {
-		const note = makeNote({ replyId: "p", renoteId: "r", text: "これはリプ" });
-		expect(toReadingText(note)).toBe("アリス のリノートへの返信。これはリプ");
-	});
-
-	it("returns empty string for a deleted note", () => {
-		const note = makeNote({ text: "本文", deletedAt: "2026-06-13T00:00:00.000Z" });
-		expect(toReadingText(note)).toBe("");
-	});
-
-	it("returns empty string for a note with no text, no files, no CW, no reply/renote", () => {
-		const note = makeNote();
-		expect(toReadingText(note)).toBe("");
-	});
-
-	it("treats null text as missing", () => {
-		const note = makeNote({ text: null });
-		expect(toReadingText(note)).toBe("");
-	});
-
-	it("treats undefined files as empty", () => {
-		const note = makeNote({ text: "hi", files: undefined });
-		expect(toReadingText(note)).toBe("hi");
-	});
-
-	it("falls back to username when name is null for renote prefix", () => {
-		const note = makeNote({
-			renoteId: "r",
-			user: makeUser({ name: null, username: "alice" }),
-		});
-		expect(toReadingText(note)).toBe("alice のリノート");
-	});
-
-	it("renders CW without body when text is null but CW is set", () => {
-		const note = makeNote({ text: null, cw: "spoiler" });
-		expect(toReadingText(note)).toBe("spoiler の注記があります");
+	it.each([
+		{
+			description: "normal text",
+			overrides: { text: "こんにちは" },
+			expected: "こんにちは",
+		},
+		{
+			description:
+				"strips URL and :emoji: from text (Acceptance: 通常のテキストノート)",
+			overrides: { text: "見てね https://x.io :smile: よろしく 👍" },
+			expected: "見てね よろしく 👍",
+		},
+		{
+			description: "text + single image joined with 。",
+			overrides: { text: "見て", files: [makeFile("image/png")] },
+			expected: "見て。画像が投稿されました",
+		},
+		{
+			description: "image-only (Acceptance: 画像のみのノート)",
+			overrides: { text: null, files: [makeFile("image/jpeg")] },
+			expected: "画像が投稿されました",
+		},
+		{
+			description: "text + multiple files",
+			overrides: {
+				text: "見て",
+				files: [makeFile("image/png"), makeFile("image/jpeg")],
+			},
+			expected: "見て。2 個のファイルが投稿されました",
+		},
+		{
+			description: "CW with body (Acceptance: CW 付き)",
+			overrides: { text: "本文", cw: "ネタバレ" },
+			expected: "ネタバレ の注記があります",
+		},
+		{
+			description: "CW body is omitted",
+			overrides: { text: "シークレット本文", cw: "spoiler" },
+			expected: "spoiler の注記があります",
+		},
+		{
+			description: "CW attachments are omitted",
+			overrides: {
+				text: "本文",
+				cw: "ネタバレ",
+				files: [makeFile("image/png")],
+			},
+			expected: "ネタバレ の注記があります",
+		},
+		{
+			description: "renote -> '<name> のリノート'",
+			overrides: { renoteId: "r1" },
+			expected: "アリス のリノート",
+		},
+		{
+			description: "reply -> '<name> への返信' + text",
+			overrides: { replyId: "p", text: "了解" },
+			expected: "アリス への返信。了解",
+		},
+		{
+			description: "reply on renote -> '<name> のリノートへの返信' + text",
+			overrides: { replyId: "p", renoteId: "r", text: "これはリプ" },
+			expected: "アリス のリノートへの返信。これはリプ",
+		},
+		{
+			description: "deleted note -> empty",
+			overrides: {
+				text: "本文",
+				deletedAt: "2026-06-13T00:00:00.000Z",
+			},
+			expected: "",
+		},
+		{
+			description: "empty note -> empty",
+			overrides: {},
+			expected: "",
+		},
+		{
+			description: "null text (no files, no cw) -> empty",
+			overrides: { text: null },
+			expected: "",
+		},
+		{
+			description: "undefined files treated as empty",
+			overrides: { text: "hi", files: undefined },
+			expected: "hi",
+		},
+		{
+			description: "renote with name=null falls back to username",
+			overrides: {
+				renoteId: "r",
+				user: makeUser({ name: null, username: "alice" }),
+			},
+			expected: "alice のリノート",
+		},
+		{
+			description: "CW with null text (no body to omit)",
+			overrides: { text: null, cw: "spoiler" },
+			expected: "spoiler の注記があります",
+		},
+	])('toReadingText: $description', ({ overrides, expected }) => {
+		expect(toReadingText(makeNote(overrides))).toBe(expected);
 	});
 });
