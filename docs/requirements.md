@@ -101,7 +101,8 @@ Users who want to listen to Misskey timelines while doing other tasks (cooking, 
 |-----------|------------|---------|
 | Frontend | Astro + TypeScript | Web UI, WebSocket client, VoiceVox integration |
 | TTS Engine | VoiceVox | Text-to-speech synthesis |
-| Runtime | Bun | Build tool |
+| Runtime | Node 24 | JavaScript runtime |
+| Package Manager | pnpm | Dependency management |
 | Container | Docker | Application packaging |
 
 ## Deployment
@@ -110,10 +111,10 @@ Users who want to listen to Misskey timelines while doing other tasks (cooking, 
 
 ```dockerfile
 # Build stage
-FROM oven/bun:1 AS builder
+FROM node:24-slim AS builder
 WORKDIR /app
 COPY . .
-RUN bun install && bun run build
+RUN corepack enable pnpm && pnpm install --frozen-lockfile && pnpm run build
 
 # Production stage
 FROM node:24-slim

@@ -1,4 +1,4 @@
-import { afterEach, beforeEach, describe, expect, it, mock } from "bun:test";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import {
 	DEFAULT_BASE_URL,
 	DEFAULT_SPEAKER,
@@ -17,7 +17,7 @@ type FetchCall = {
 
 function mockFetch(responder: (call: FetchCall) => Response | Promise<Response>): FetchCall[] {
 	const calls: FetchCall[] = [];
-	globalThis.fetch = mock(async (input: RequestInfo | URL, init?: RequestInit) => {
+	globalThis.fetch = vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
 		const url = typeof input === "string" ? input : input instanceof URL ? input.toString() : input.url;
 		calls.push({ url, init });
 		return responder({ url, init });
@@ -102,7 +102,7 @@ describe("audioQuery", () => {
 	});
 
 	it("throws VoiceVoxError(connection) when fetch itself fails", async () => {
-		globalThis.fetch = mock(async () => {
+		globalThis.fetch = vi.fn(async () => {
 			throw new TypeError("ECONNREFUSED");
 		}) as unknown as typeof fetch;
 
@@ -114,7 +114,7 @@ describe("audioQuery", () => {
 	it("rethrows AbortError unchanged so callers can distinguish cancellation from connection failure", async () => {
 		const abortError = new Error("aborted");
 		abortError.name = "AbortError";
-		globalThis.fetch = mock(async () => {
+		globalThis.fetch = vi.fn(async () => {
 			throw abortError;
 		}) as unknown as typeof fetch;
 
@@ -180,7 +180,7 @@ describe("synthesize", () => {
 		const audio = new Uint8Array([1, 2, 3, 4]).buffer;
 		const calls: FetchCall[] = [];
 		let phase = 0;
-		globalThis.fetch = mock(async (input: RequestInfo | URL) => {
+		globalThis.fetch = vi.fn(async (input: RequestInfo | URL) => {
 			const url = typeof input === "string" ? input : input.toString();
 			calls.push({ url, init: undefined });
 			phase++;
@@ -207,7 +207,7 @@ describe("synthesize", () => {
 		expect(url).toContain(`speaker=${DEFAULT_SPEAKER}`);
 	});
 
-	it("uses VOICEVOX_URL from process.env (Bun maps this to import.meta.env) when baseUrl is not provided", async () => {
+	it("uses VOICEVOX_URL from process.env when baseUrl is not provided", async () => {
 		process.env.VOICEVOX_URL = "http://env-host:50021";
 		const calls = mockFetch(() => jsonResponse(sampleQuery));
 

@@ -25,7 +25,7 @@ If applicable, add screenshots to help explain your problem.
 - OS: [e.g. macOS, Windows, Linux]
 - Browser: [e.g. Chrome, Firefox, Safari]
 - Node version: [e.g. 24.x]
-- Bun version: [e.g. 1.x]
+- pnpm version: [e.g. 10.x]
 
 ## Additional context
 Add any other context about the problem here.

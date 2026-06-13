@@ -1,4 +1,4 @@
-import { afterEach, beforeEach, describe, expect, it, mock } from "bun:test";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { VoiceVoxPlayer } from "./player.ts";
 import { VoiceVoxPlayerError } from "./errors.ts";
 import type { PlayerState } from "./types.ts";
@@ -10,16 +10,16 @@ class MockAudioElement {
 	currentTime = 0;
 	duration = NaN;
 	paused = true;
-	play = mock(async (): Promise<void> => {
+	play = vi.fn(async (): Promise<void> => {
 		this.paused = false;
 	});
-	pause = mock((): void => {
+	pause = vi.fn((): void => {
 		this.paused = true;
 	});
-	load = mock((): void => {});
+	load = vi.fn((): void => {});
 	#listeners = new Map<string, Set<Listener>>();
 
-	addEventListener = mock((type: string, listener: Listener): void => {
+	addEventListener = vi.fn((type: string, listener: Listener): void => {
 		let set = this.#listeners.get(type);
 		if (!set) {
 			set = new Set();
@@ -28,7 +28,7 @@ class MockAudioElement {
 		set.add(listener);
 	});
 
-	removeEventListener = mock((type: string, listener: Listener): void => {
+	removeEventListener = vi.fn((type: string, listener: Listener): void => {
 		this.#listeners.get(type)?.delete(listener);
 	});
 
@@ -68,8 +68,8 @@ beforeEach(() => {
 		constructor(public parts: unknown[], public opts?: { type?: string }) {}
 	};
 	(globalThis as { URL: unknown }).URL = {
-		createObjectURL: mock(() => `blob:fake/${Math.random().toString(36).slice(2)}`),
-		revokeObjectURL: mock(() => {}),
+		createObjectURL: vi.fn(() => `blob:fake/${Math.random().toString(36).slice(2)}`),
+		revokeObjectURL: vi.fn(() => {}),
 	} as unknown as typeof URL;
 });
 
@@ -118,7 +118,7 @@ describe("VoiceVoxPlayer.play", () => {
 		const { player } = createPlayer();
 		await player.play(makeBuffer(1));
 		await player.play(makeBuffer(2));
-		const revoke = (globalThis.URL as unknown as { revokeObjectURL: ReturnType<typeof mock> }).revokeObjectURL;
+		const revoke = (globalThis.URL as unknown as { revokeObjectURL: ReturnType<typeof vi.fn> }).revokeObjectURL;
 		expect(revoke.mock.calls.length).toBeGreaterThanOrEqual(1);
 	});
 
@@ -142,7 +142,7 @@ describe("VoiceVoxPlayer.play", () => {
 
 	it("catches a rejected audio.play() and converts it to a media_error", async () => {
 		const { player, audio } = createPlayer();
-		audio.play = mock(async () => {
+		audio.play = vi.fn(async () => {
 			throw new Error("autoplay blocked");
 		});
 		const errors: VoiceVoxPlayerError[] = [];
@@ -192,7 +192,7 @@ describe("VoiceVoxPlayer.stop", () => {
 		player.stop();
 		expect(audio.pause).toHaveBeenCalled();
 		expect(audio.currentTime).toBe(0);
-		const revoke = (globalThis.URL as unknown as { revokeObjectURL: ReturnType<typeof mock> }).revokeObjectURL;
+		const revoke = (globalThis.URL as unknown as { revokeObjectURL: ReturnType<typeof vi.fn> }).revokeObjectURL;
 		expect(revoke).toHaveBeenCalled();
 		expect(player.state).toBe("stopped");
 	});
@@ -234,7 +234,7 @@ describe("VoiceVoxPlayer events", () => {
 
 	it("on() returns an unsubscribe function that removes the listener", async () => {
 		const { player, audio } = createPlayer();
-		const handler = mock(() => {});
+		const handler = vi.fn(() => {});
 		const off = player.on("ended", handler);
 		await player.play(makeBuffer(1));
 		audio.dispatch("ended");
@@ -246,7 +246,7 @@ describe("VoiceVoxPlayer events", () => {
 
 	it("a throwing listener does not break other listeners", async () => {
 		const { player, audio } = createPlayer();
-		const good = mock(() => {});
+		const good = vi.fn(() => {});
 		player.on("ended", () => {
 			throw new Error("boom");
 		});
@@ -261,7 +261,7 @@ describe("VoiceVoxPlayer.destroy", () => {
 	it("stops playback, revokes URL and makes the player unusable", async () => {
 		const { player, audio } = createPlayer();
 		await player.play(makeBuffer(1));
-		const revoke = (globalThis.URL as unknown as { revokeObjectURL: ReturnType<typeof mock> }).revokeObjectURL;
+		const revoke = (globalThis.URL as unknown as { revokeObjectURL: ReturnType<typeof vi.fn> }).revokeObjectURL;
 		const callsBefore = revoke.mock.calls.length;
 		player.destroy();
 		expect(audio.removeEventListener).toHaveBeenCalledWith("ended", expect.anything());

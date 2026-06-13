@@ -34,8 +34,8 @@ result-*
 # Astro
 .astro/
 
-# Bun
-bun.lockb
+# pnpm
+.pnpm-store/
 
 # Worktrees
 .worktrees/
