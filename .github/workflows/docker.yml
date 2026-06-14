@@ -8,10 +8,6 @@ on:
       - ".dockerignore"
       - "package.json"
       - "pnpm-lock.yaml"
-      - "src/**"
-      - "astro.config.mjs"
-      - "tailwind.config.mjs"
-      - "tsconfig.json"
   push:
     branches: [master]
     paths:
@@ -19,10 +15,6 @@ on:
       - ".dockerignore"
       - "package.json"
       - "pnpm-lock.yaml"
-      - "src/**"
-      - "astro.config.mjs"
-      - "tailwind.config.mjs"
-      - "tsconfig.json"
 
 permissions:
   contents: read
