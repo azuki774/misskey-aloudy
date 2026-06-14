@@ -46,7 +46,7 @@ jobs:
           images: ghcr.io/${{ github.repository }}
           tags: |
             type=sha,prefix=sha-,format=short
-            type=ref,branch=master
+            type=ref,event=branch
 
       - name: Log in to GHCR
         if: github.event_name == 'push'
