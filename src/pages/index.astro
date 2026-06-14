@@ -52,10 +52,22 @@ if (import.meta.env.DEV && (!rawInstanceUrl || rawInstanceUrl === FALLBACK_INSTA
       >
         切断
       </button>
+      <button
+        id="reading-toggle"
+        type="button"
+        disabled
+        aria-pressed="false"
+        class="rounded-md border border-accent-bg bg-bg px-4 py-2 text-sm font-medium text-accent-bg transition-colors hover:bg-accent-hover disabled:cursor-not-allowed disabled:opacity-50"
+      >
+        読み上げ ON
+      </button>
     </div>
 
     <p class="mt-4 text-sm">
-      状態: <span id="state" class="font-medium">未接続</span>
+      Misskey 接続: <span id="state" class="font-medium">未接続</span>
+    </p>
+    <p class="mt-1 text-sm">
+      読み上げ: <span id="reading-status" class="font-medium">OFF</span>
     </p>
     <p
       id="error"
