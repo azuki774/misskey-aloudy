@@ -1,13 +1,9 @@
 ---
 import Layout from "../layouts/Layout.astro";
+import { FALLBACK_INSTANCE_URL, resolveInstanceUrl } from "../lib/instanceUrl.ts";
 
-const FALLBACK_INSTANCE_URL = "https://misskey.io";
-const rawInstanceUrl = import.meta.env.MISSKEY_INSTANCE_URL;
-const instanceUrl =
-	typeof rawInstanceUrl === "string" && rawInstanceUrl.length > 0
-		? rawInstanceUrl
-		: FALLBACK_INSTANCE_URL;
-if (import.meta.env.DEV && (!rawInstanceUrl || rawInstanceUrl === FALLBACK_INSTANCE_URL)) {
+const instanceUrl = resolveInstanceUrl();
+if (process.env.NODE_ENV !== "production" && instanceUrl === FALLBACK_INSTANCE_URL) {
 	console.warn(
 		`[index] MISSKEY_INSTANCE_URL is not set; falling back to ${FALLBACK_INSTANCE_URL}`,
 	);
