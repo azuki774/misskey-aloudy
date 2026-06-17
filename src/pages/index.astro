@@ -16,6 +16,9 @@ if (process.env.NODE_ENV !== "production" && instanceUrl === FALLBACK_INSTANCE_U
     <p class="mt-2 text-fg-muted">
       Misskey インスタンスのグローバルタイムラインを購読し、受信したノートをリアルタイムで表示します。
     </p>
+    <p class="mt-2 text-sm text-fg-muted">
+      使い方: ページを開くと自動で Misskey に接続します。「接続済み」と表示されたら、下の「読み上げ」スイッチを ON にしてください。以降、届いたノートが自動で読み上げられます。
+    </p>
 
     <div class="mt-6">
       <label for="instance-url" class="block text-sm font-medium">
@@ -51,11 +54,27 @@ if (process.env.NODE_ENV !== "production" && instanceUrl === FALLBACK_INSTANCE_U
       <button
         id="reading-toggle"
         type="button"
+        role="switch"
+        aria-checked="false"
         disabled
-        aria-pressed="false"
-        class="rounded-md border border-accent-bg bg-bg px-4 py-2 text-sm font-medium text-accent-bg transition-colors hover:bg-accent-hover disabled:cursor-not-allowed disabled:opacity-50"
+        class="group inline-flex items-center gap-2 rounded-md border border-border bg-bg px-3 py-2 text-sm font-medium text-fg transition-colors hover:bg-accent-hover disabled:cursor-not-allowed disabled:opacity-50 aria-checked:border-green-600 aria-checked:bg-green-50 aria-checked:text-green-700 dark:aria-checked:border-green-400 dark:aria-checked:bg-green-950 dark:aria-checked:text-green-300"
       >
-        読み上げ ON
+        <span class="relative inline-block h-5 w-9 rounded-full bg-gray-300 transition-colors group-aria-checked:bg-green-500" aria-hidden="true">
+          <span class="absolute top-0.5 left-0.5 h-4 w-4 rounded-full bg-white shadow transition-transform group-aria-checked:translate-x-4"></span>
+        </span>
+        <span>読み上げ</span>
+        <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <g id="reading-toggle-icon-off">
+            <path d="M11 5L6 9H2v6h4l5 4V5z" />
+            <line x1="23" y1="9" x2="17" y2="15" />
+            <line x1="17" y1="9" x2="23" y2="15" />
+          </g>
+          <g id="reading-toggle-icon-on" hidden>
+            <path d="M11 5L6 9H2v6h4l5 4V5z" />
+            <path d="M15.54 8.46a5 5 0 0 1 0 7.07" />
+            <path d="M19.07 4.93a10 10 0 0 1 0 14.14" />
+          </g>
+        </svg>
       </button>
     </div>
 
