@@ -113,7 +113,7 @@ export class PlaybackPipeline {
 - The pipeline subscribes to its own `NoteQueue.on("change", ...)` to re-emit `queueChange`. The pipeline also subscribes to `player` events:
   - `statechange` is not consumed (the underlying player manages its own state internally; the pipeline only tracks the higher-level state).
   - `error` is re-emitted as the pipeline's `error` event with the most recently dequeued note (if any).
-  - The pipeline does **not** rely on `ended` because `player.play(buffer)` already returns a Promise that resolves when audio finishes (see `src/lib/voicevox/player.ts:60`).
+  - The pipeline does **not** subscribe to `ended` itself; instead, it `await`s `player.play(buffer)`, which now resolves only when the audio element fires `ended` (or rejects on `error`, initial play failure, or destroy). The behavior is exercised by `VoiceVoxPlayer` tests in `src/lib/voicevox/player.test.ts` under the `Promise semantics` describe block.
 
 ### 5.2 `enqueue(note)`
 

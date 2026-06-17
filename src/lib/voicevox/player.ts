@@ -29,6 +29,8 @@ export class VoiceVoxPlayer {
 	#state: PlayerState = "idle";
 	#currentObjectUrl: string | null = null;
 	#destroyed = false;
+	#currentPlayResolve: (() => void) | null = null;
+	#currentPlayReject: ((err: VoiceVoxPlayerError) => void) | null = null;
 	#listeners: { [E in PlayerEvent]: Set<PlayerEventHandler<E>> } = {
 		statechange: new Set(),
 		ended: new Set(),
@@ -57,6 +59,22 @@ export class VoiceVoxPlayer {
 		return Number.isFinite(d) ? d : 0;
 	}
 
+	/**
+	 * Load the audio buffer, start playback, and return a Promise that
+	 * resolves when the audio finishes naturally (on the `ended` event).
+	 *
+	 * The Promise rejects when:
+	 * - the audio element reports an `error`
+	 * - the initial `audio.play()` fails (e.g. autoplay blocked)
+	 * - the player is destroyed mid-playback
+	 *
+	 * The Promise is superseded (resolves) when:
+	 * - `stop()` is called mid-playback
+	 * - a new `play()` is called before this one has finished
+	 *
+	 * State transitions to `"playing"` synchronously (before the Promise
+	 * resolves), and to `"stopped"` on completion.
+	 */
 	play(audioBuffer: ArrayBuffer): Promise<void> {
 		if (this.#destroyed) {
 			return Promise.reject(
@@ -73,18 +91,38 @@ export class VoiceVoxPlayer {
 			this.#setState("playing");
 			const result = this.#audio.play();
 			if (result && typeof (result as Promise<void>).then === "function") {
-				return (result as Promise<void>).catch((err: unknown) => {
+				result.catch((err: unknown) => {
 					const wrapped = new VoiceVoxPlayerError(
 						err instanceof Error ? err.message : "Failed to resume playback",
 						"media_error",
 					);
 					this.#setState("stopped");
 					this.#emitError(wrapped);
-					throw wrapped;
+					this.#settleCurrentPlay("error", wrapped);
+				});
+			}
+			// Return a Promise that waits for the existing pending play to settle.
+			// The previous `play()` and this resumed `play()` both resolve when the
+			// audio actually ends. We chain by replacing the stored resolve/reject
+			// with versions that fan out to both.
+			if (this.#currentPlayResolve !== null && this.#currentPlayReject !== null) {
+				const prevResolve = this.#currentPlayResolve;
+				const prevReject = this.#currentPlayReject;
+				return new Promise<void>((resolve, reject) => {
+					this.#currentPlayResolve = (): void => {
+						prevResolve();
+						resolve();
+					};
+					this.#currentPlayReject = (err: VoiceVoxPlayerError): void => {
+						prevReject(err);
+						reject(err);
+					};
 				});
 			}
 			return Promise.resolve();
 		}
+
+		this.#settleCurrentPlay("superseded");
 
 		this.#revokeCurrentUrl();
 		const blob = new Blob([audioBuffer], { type: BLOB_TYPE });
@@ -95,19 +133,25 @@ export class VoiceVoxPlayer {
 
 		this.#setState("playing");
 
-		const result = this.#audio.play();
-		if (result && typeof (result as Promise<void>).then === "function") {
-			return (result as Promise<void>).catch((err: unknown) => {
-				const wrapped = new VoiceVoxPlayerError(
-					err instanceof Error ? err.message : "Failed to start playback",
-					"media_error",
-				);
-				this.#setState("stopped");
-				this.#emitError(wrapped);
-				throw wrapped;
-			});
-		}
-		return Promise.resolve();
+		return new Promise<void>((resolve, reject) => {
+			this.#currentPlayResolve = resolve;
+			this.#currentPlayReject = reject;
+
+			const result = this.#audio.play();
+			if (result && typeof (result as Promise<void>).then === "function") {
+				result.catch((err: unknown) => {
+					const wrapped = new VoiceVoxPlayerError(
+						err instanceof Error ? err.message : "Failed to start playback",
+						"media_error",
+					);
+					this.#setState("stopped");
+					this.#emitError(wrapped);
+					this.#currentPlayResolve = null;
+					this.#currentPlayReject = null;
+					reject(wrapped);
+				});
+			}
+		});
 	}
 
 	pause(): void {
@@ -122,6 +166,7 @@ export class VoiceVoxPlayer {
 		this.#audio.currentTime = 0;
 		this.#revokeCurrentUrl();
 		this.#setState("stopped");
+		this.#settleCurrentPlay("stopped");
 	}
 
 	on<E extends PlayerEvent>(event: E, handler: PlayerEventHandler<E>): () => void {
@@ -148,6 +193,7 @@ export class VoiceVoxPlayer {
 		this.#listeners.ended.clear();
 		this.#listeners.error.clear();
 		this.#setState("stopped");
+		this.#settleCurrentPlay("destroyed");
 	}
 
 	#setState(next: PlayerState): void {
@@ -179,14 +225,48 @@ export class VoiceVoxPlayer {
 		}
 	}
 
+	/**
+	 * Settle any pending `play()` Promise.
+	 *
+	 * - On `"superseded"`, `"stopped"`, or `"ended"`: resolve (audio is
+	 *   no longer active; the caller can move on).
+	 * - On `"error"` (with `err`): reject with the given error.
+	 * - On `"destroyed"`: reject with `media_error` (the player is gone, so
+	 *   the audio will never finish).
+	 *
+	 * Idempotent: safe to call when no Promise is pending.
+	 */
+	#settleCurrentPlay(
+		reason: "ended" | "error" | "superseded" | "stopped" | "destroyed",
+		err?: VoiceVoxPlayerError,
+	): void {
+		const resolve = this.#currentPlayResolve;
+		const reject = this.#currentPlayReject;
+		this.#currentPlayResolve = null;
+		this.#currentPlayReject = null;
+		if (reason === "destroyed") {
+			if (reject) {
+				reject(new VoiceVoxPlayerError("Player has been destroyed", "media_error"));
+			}
+			return;
+		}
+		if (reason === "error" && err) {
+			if (reject) reject(err);
+			return;
+		}
+		if (resolve) resolve();
+	}
+
 	readonly #handleEnded = (): void => {
 		this.#setState("stopped");
 		this.#emit("ended", undefined);
+		this.#settleCurrentPlay("ended");
 	};
 
 	readonly #handleError = (): void => {
 		this.#setState("stopped");
 		const err = new VoiceVoxPlayerError("Underlying audio element reported an error", "media_error");
 		this.#emitError(err);
+		this.#settleCurrentPlay("error", err);
 	};
 }
