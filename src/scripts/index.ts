@@ -105,9 +105,15 @@ function init(): void {
 
 	function updateReadingButtons(): void {
 		const connected = client !== null;
+		const checked = isReading;
 		readingToggleEl!.disabled = !connected || isUnloading;
-		readingToggleEl!.textContent = isReading ? "読み上げ OFF" : "読み上げ ON";
-		readingToggleEl!.setAttribute("aria-pressed", isReading ? "true" : "false");
+		readingToggleEl!.setAttribute("aria-checked", checked ? "true" : "false");
+		document
+			.getElementById("reading-toggle-icon-on")
+			?.toggleAttribute("hidden", !checked);
+		document
+			.getElementById("reading-toggle-icon-off")
+			?.toggleAttribute("hidden", checked);
 	}
 
 	function renderState(state: ConnectionState): void {
@@ -216,13 +222,10 @@ function init(): void {
 	function disableReading(): void {
 		const current = readingState;
 		if (pipeline === null || current === null) return;
-		isReading = false;
-		pipeline.stop();
 		if (current.currentNote !== null) {
 			unmarkNotePlaying(current.currentNote.id);
 		}
-		updateReadingButtons();
-		setReadingStatusText("OFF");
+		destroyPipeline();
 	}
 
 	function destroyPipeline(): void {
@@ -319,6 +322,8 @@ function init(): void {
 	});
 	disconnectEl.addEventListener("click", onDisconnectClick);
 	readingToggleEl.addEventListener("click", toggleReading);
+
+	void onConnectClick();
 
 	window.addEventListener("beforeunload", () => {
 		isUnloading = true;
