@@ -84,5 +84,9 @@ export async function synthesis(options: SynthesisOptions): Promise<ArrayBuffer>
 export async function synthesize(options: SynthesizeOptions): Promise<ArrayBuffer> {
 	const speaker = options.speaker ?? DEFAULT_SPEAKER;
 	const query = await audioQuery({ text: options.text, speaker, baseUrl: options.baseUrl, signal: options.signal });
-	return await synthesis({ query, speaker, baseUrl: options.baseUrl, signal: options.signal });
+	const finalQuery =
+		options.speedScale !== undefined
+			? { ...query, speedScale: options.speedScale }
+			: query;
+	return await synthesis({ query: finalQuery, speaker, baseUrl: options.baseUrl, signal: options.signal });
 }

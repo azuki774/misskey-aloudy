@@ -85,4 +85,24 @@ describe("synthesizeViaSpeechApi", () => {
 			synthesizeViaSpeechApi({ text: "", speaker: 1 }),
 		).rejects.toThrowError(/400.*text is required/);
 	});
+
+	it("forwards speedScale to /api/speech when provided", async () => {
+		const fetchMock = globalThis.fetch as ReturnType<typeof vi.fn>;
+		fetchMock.mockResolvedValueOnce(mockFetchResponse(200, SAMPLE_WAV));
+
+		await synthesizeViaSpeechApi({ text: "x", speaker: 1, speedScale: 1.2 });
+
+		const body = JSON.parse((fetchMock.mock.calls[0]?.[1] as RequestInit).body as string);
+		expect(body.speedScale).toBe(1.2);
+	});
+
+	it("omits speedScale from the body when not provided", async () => {
+		const fetchMock = globalThis.fetch as ReturnType<typeof vi.fn>;
+		fetchMock.mockResolvedValueOnce(mockFetchResponse(200, SAMPLE_WAV));
+
+		await synthesizeViaSpeechApi({ text: "x", speaker: 1 });
+
+		const body = JSON.parse((fetchMock.mock.calls[0]?.[1] as RequestInit).body as string);
+		expect(body.speedScale).toBeUndefined();
+	});
 });

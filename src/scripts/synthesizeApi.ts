@@ -14,13 +14,17 @@ import type { SynthesizeOptions } from "../lib/voicevox/types.ts";
 export async function synthesizeViaSpeechApi(
 	options: SynthesizeOptions,
 ): Promise<ArrayBuffer> {
+	const body: Record<string, unknown> = {
+		text: options.text,
+		speaker: options.speaker ?? 1,
+	};
+	if (options.speedScale !== undefined) {
+		body.speedScale = options.speedScale;
+	}
 	const res = await fetch("/api/speech", {
 		method: "POST",
 		headers: { "content-type": "application/json" },
-		body: JSON.stringify({
-			text: options.text,
-			speaker: options.speaker ?? 1,
-		}),
+		body: JSON.stringify(body),
 	});
 	if (!res.ok) {
 		let detail = "";
