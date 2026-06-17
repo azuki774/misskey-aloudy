@@ -30,6 +30,7 @@ export type SynthesisOptions = {
 export type SynthesizeOptions = {
 	text: string;
 	speaker?: number;
+	speedScale?: number;
 	baseUrl?: string;
 	signal?: AbortSignal;
 };

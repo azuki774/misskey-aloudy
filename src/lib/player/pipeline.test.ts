@@ -113,6 +113,12 @@ describe("PlaybackPipeline: enqueue", () => {
 		expect(events).toEqual(["q:1", "q:0", `start:n1`, `end:n1`]);
 	});
 
+	it("passes the default speedScale to synthesize", async () => {
+		pipeline.enqueue(makeNote("n1"));
+		await tick();
+		expect(synthesize).toHaveBeenCalledWith(expect.objectContaining({ speedScale: 1.1 }));
+	});
+
 	it("two notes in sequence: second plays after the first ends", async () => {
 		pipeline.enqueue(makeNote("n1"));
 		pipeline.enqueue(makeNote("n2"));
@@ -249,6 +255,21 @@ describe("PlaybackPipeline: error", () => {
 });
 
 describe("PlaybackPipeline: destroy", () => {
+	it("honors a custom defaultSpeed option", async () => {
+		const localPlayer = new MockPlayer();
+		const localSynth = vi.fn(async () => new TextEncoder().encode("RIFF").buffer);
+		const localPipeline = new PlaybackPipeline({
+			player: asVoiceVoxPlayer(localPlayer),
+			synthesize: localSynth,
+			defaultSpeed: 1.5,
+		});
+		expect(localPipeline.defaultSpeed).toBe(1.5);
+		localPipeline.enqueue(makeNote("n1"));
+		await tick();
+		expect(localSynth).toHaveBeenCalledWith(expect.objectContaining({ speedScale: 1.5 }));
+		localPipeline.destroy();
+	});
+
 	it("is idempotent", () => {
 		pipeline.destroy();
 		expect(() => pipeline.destroy()).not.toThrow();

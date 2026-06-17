@@ -215,4 +215,27 @@ describe("synthesize", () => {
 
 		expect(calls[0]?.url.startsWith("http://env-host:50021/")).toBe(true);
 	});
+
+	it("merges speedScale into the query before POSTing to /synthesis", async () => {
+		const calls = mockFetch(() => jsonResponse(sampleQuery));
+
+		await synthesize({ text: "test", speaker: 1, speedScale: 1.3, baseUrl: "http://vv.test:50021" });
+
+		expect(calls).toHaveLength(2);
+		const synthCall = calls[1];
+		expect(synthCall?.url).toContain("/synthesis");
+		const body = JSON.parse((synthCall?.init?.body as string) ?? "{}");
+		expect(body.speedScale).toBe(1.3);
+	});
+
+	it("leaves speedScale unset on the query when not provided", async () => {
+		const calls = mockFetch(() => jsonResponse(sampleQuery));
+
+		await synthesize({ text: "test", speaker: 1, baseUrl: "http://vv.test:50021" });
+
+		const body = JSON.parse((calls[1]?.init?.body as string) ?? "{}");
+		// The query's own speedScale (1 in sampleQuery) is preserved untouched
+		// when the caller does not pass one through synthesize().
+		expect(body.speedScale).toBe(1);
+	});
 });

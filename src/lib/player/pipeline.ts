@@ -8,6 +8,7 @@ import type { SynthesizeOptions } from "../voicevox/types.ts";
 
 const DEFAULT_QUEUE_MAX_SIZE = 10;
 const DEFAULT_SPEAKER = 1;
+const DEFAULT_SPEED_SCALE = 1.1;
 
 export type PlaybackPipelineOptions = {
 	player: VoiceVoxPlayer;
@@ -16,6 +17,7 @@ export type PlaybackPipelineOptions = {
 	toReadingText?: (note: Note) => string;
 	queueMaxSize?: number;
 	defaultSpeaker?: number;
+	defaultSpeed?: number;
 };
 
 export type PlaybackPipelineEvent = "noteStart" | "noteEnd" | "error" | "queueChange";
@@ -56,6 +58,7 @@ export class PlaybackPipeline {
 	readonly state: PlaybackState;
 	readonly queue: NoteQueue;
 	readonly defaultSpeaker: number;
+	readonly defaultSpeed: number;
 
 	#player: VoiceVoxPlayer;
 	#synthesize: (options: SynthesizeOptions) => Promise<ArrayBuffer>;
@@ -77,6 +80,7 @@ export class PlaybackPipeline {
 		this.state = options.state ?? new PlaybackState();
 		this.queue = new NoteQueue({ maxSize: options.queueMaxSize ?? DEFAULT_QUEUE_MAX_SIZE });
 		this.defaultSpeaker = options.defaultSpeaker ?? DEFAULT_SPEAKER;
+		this.defaultSpeed = options.defaultSpeed ?? DEFAULT_SPEED_SCALE;
 		this.#player = options.player;
 		this.#synthesize = options.synthesize ?? defaultSynthesize;
 		this.#toReadingText = options.toReadingText ?? defaultToReadingText;
@@ -193,6 +197,7 @@ export class PlaybackPipeline {
 				const buffer = await this.#synthesize({
 					text,
 					speaker: this.defaultSpeaker,
+					speedScale: this.defaultSpeed,
 				});
 				if (this.#destroyed || this.#stopped) return;
 

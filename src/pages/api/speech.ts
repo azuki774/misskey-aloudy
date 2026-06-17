@@ -7,12 +7,19 @@ export const prerender = false;
 type SpeechRequestBody = {
 	text?: unknown;
 	speaker?: unknown;
+	speedScale?: unknown;
 };
 
 const MAX_TEXT_LENGTH = 1000;
+const MIN_SPEED_SCALE = 0.5;
+const MAX_SPEED_SCALE = 2.0;
 
 function isFinitePositiveInt(value: unknown): value is number {
 	return typeof value === "number" && Number.isFinite(value) && Number.isInteger(value) && value > 0;
+}
+
+function isFinitePositiveNumber(value: unknown): value is number {
+	return typeof value === "number" && Number.isFinite(value) && value > 0;
 }
 
 export const POST: APIRoute = async ({ request }) => {
@@ -51,8 +58,25 @@ export const POST: APIRoute = async ({ request }) => {
 		speaker = body.speaker;
 	}
 
+	let speedScale: number | undefined;
+	if (body.speedScale !== undefined) {
+		if (
+			!isFinitePositiveNumber(body.speedScale) ||
+			body.speedScale < MIN_SPEED_SCALE ||
+			body.speedScale > MAX_SPEED_SCALE
+		) {
+			return new Response(
+				JSON.stringify({
+					error: `speedScale must be a finite number in [${MIN_SPEED_SCALE}, ${MAX_SPEED_SCALE}]`,
+				}),
+				{ status: 400, headers: { "content-type": "application/json" } },
+			);
+		}
+		speedScale = body.speedScale;
+	}
+
 	try {
-		const audio = await synthesize({ text, speaker });
+		const audio = await synthesize({ text, speaker, speedScale });
 		return new Response(audio, {
 			status: 200,
 			headers: {
