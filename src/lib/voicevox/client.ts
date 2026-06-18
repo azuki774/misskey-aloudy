@@ -12,7 +12,7 @@ export { DEFAULT_BASE_URL, DEFAULT_SPEAKER };
 
 export function resolveBaseUrl(override?: string): string {
 	if (override && override.length > 0) return override.replace(/\/+$/, "");
-	const fromEnv = import.meta.env.VOICEVOX_URL;
+	const fromEnv = process.env.VOICEVOX_URL;
 	if (typeof fromEnv === "string" && fromEnv.length > 0) return fromEnv.replace(/\/+$/, "");
 	return DEFAULT_BASE_URL;
 }

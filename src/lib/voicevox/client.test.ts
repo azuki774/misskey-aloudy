@@ -40,12 +40,12 @@ function bufferResponse(body: ArrayBuffer, status = 200): Response {
 }
 
 beforeEach(() => {
-	delete process.env.VOICEVOX_URL;
+	vi.stubEnv("VOICEVOX_URL", "");
 });
 
 afterEach(() => {
 	globalThis.fetch = originalFetch;
-	delete process.env.VOICEVOX_URL;
+	vi.unstubAllEnvs();
 });
 
 describe("audioQuery", () => {
@@ -208,12 +208,21 @@ describe("synthesize", () => {
 	});
 
 	it("uses VOICEVOX_URL from process.env when baseUrl is not provided", async () => {
-		process.env.VOICEVOX_URL = "http://env-host:50021";
+		vi.stubEnv("VOICEVOX_URL", "http://env-host:50021");
 		const calls = mockFetch(() => jsonResponse(sampleQuery));
 
 		await synthesize({ text: "test", speaker: 1 });
 
 		expect(calls[0]?.url.startsWith("http://env-host:50021/")).toBe(true);
+	});
+
+	it("falls back to DEFAULT_BASE_URL when VOICEVOX_URL is unset", async () => {
+		vi.stubEnv("VOICEVOX_URL", "");
+		const calls = mockFetch(() => jsonResponse(sampleQuery));
+
+		await synthesize({ text: "test", speaker: 1 });
+
+		expect(calls[0]?.url.startsWith(DEFAULT_BASE_URL)).toBe(true);
 	});
 
 	it("merges speedScale into the query before POSTing to /synthesis", async () => {
