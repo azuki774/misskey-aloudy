@@ -1,0 +1,60 @@
+misskey-aloudy
+Copyright (c) 2026 Ashley Skye
+
+This product includes software and assets developed by third parties.
+The full text of the MIT License for this project is available in the
+LICENSE file at the root of this repository.
+
+================================================================================
+VOICEVOX (Text-to-Speech Engine)
+================================================================================
+
+This application uses the VOICEVOX text-to-speech engine to synthesize
+speech. The engine is invoked at runtime via Docker; no VOICEVOX source
+code is bundled with this distribution.
+
+  - Project:       https://voicevox.hiroshiba.jp/
+  - Engine source: https://github.com/VOICEVOX/voicevox_engine
+  - Copyright:     (c) Hiroshiba Kazuyuki
+  - License:       GNU Lesser General Public License v3
+                   (or alternative commercial license; see project page)
+  - Terms of use:  https://voicevox.hiroshiba.jp/term/
+
+Per the VOICEVOX Software Terms of Use, the following credit is provided:
+"Powered by VOICEVOX". The full credit is also displayed in the
+application's footer (see "Credits / License" section).
+
+================================================================================
+VOICEVOX Characters (Tohoku Zunko / Zundamon Project)
+================================================================================
+
+The following character voices may be used by this application to
+synthesize speech for narration:
+
+  - VOICEVOX:四国めたん (default)
+  - VOICEVOX:ずんだもん
+
+These characters are part of the ずんずんPJ (Tohoku Zunko / Zundamon
+Project) operated by SSS LLC. They are subject to the project's Voice
+Source Usage Terms (音源利用規約) and Character Usage Guidelines
+(キャラクター利用の手引き):
+
+  - Voice Source Usage Terms:    https://zunko.jp/con_ongen_kiyaku.html
+  - Character Usage Guidelines: https://zunko.jp/guideline.html
+
+The voice source terms require a "VOICEVOX:" prefixed credit for each
+character whose voice is used. The required credit labels are
+reproduced in the application's footer.
+
+This project is non-commercial and open source. Under the project's
+guidelines, no prior application is required for non-commercial voice
+synthesis use.
+
+================================================================================
+Disclaimer
+================================================================================
+
+This project is an unofficial, independent open-source application. It
+is not affiliated with, endorsed by, or sponsored by SSS LLC.,
+Hiroshiba Kazuyuki, or the VOICEVOX project. All trademarks, character
+rights, and software rights belong to their respective owners.
