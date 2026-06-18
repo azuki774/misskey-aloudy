@@ -7,7 +7,7 @@ description: Use when publishing a new semver tag and GitHub Release for the mis
 
 ## Overview
 
-Guides an opencode agent through the human-in-the-loop flow of publishing a new semver tag (`X.Y.Z`, no `v` prefix) and a GitHub Release for misskey-aloudy. The flow is **Plan → Confirm → Execute → Verify**, with hard pre-checks, an explicit user approval gate, and per-step error handling.
+Guides an opencode agent through the human-in-the-loop flow of publishing a new semver tag (`X.Y.Z`, no `v` prefix) and a GitHub Release for misskey-aloudy. The flow is **Prepare → Confirm → Execute → Verify**, with hard pre-checks, an explicit user approval gate, and per-step error handling.
 
 The agent must never modify any project file (CI workflow, Dockerfile, source code) during this skill. The only commands issued are `git tag`, `git push`, and `gh release create`.
 
@@ -38,9 +38,12 @@ The user must provide a version string of the form `X.Y.Z` (no `v` prefix). If t
 Verify these are present and authenticated before Phase 1:
 
 - `git` (any recent version)
-- `gh` (GitHub CLI), authenticated via `gh auth login` for the `azuki774/misskey-aloudy` repository
+- `gh` (GitHub CLI)
 
-If `gh auth status` fails, stop and ask the user to authenticate. Do not proceed.
+Checks (run in this order, stop on the first failure):
+
+1. `command -v gh` must succeed. If missing, tell the user to install GitHub CLI from https://cli.github.com/ (e.g. `brew install gh`, `apt install gh`) and stop. Do not proceed.
+2. `gh auth status` must show an authenticated user. If not authenticated, tell the user to run `gh auth login` and stop. Do not proceed.
 
 ## Phase 1: Prepare (read-only)
 
@@ -53,7 +56,7 @@ Run each check in this order. If any fails, stop and report.
 1. `git fetch origin`
 2. `git rev-parse --abbrev-ref HEAD` must return `master`
 3. `git status --porcelain` must produce empty output (working tree clean)
-4. `git rev-parse master` and `git rev-parse origin/master` must be equal
+4. `git rev-parse master` and `git rev-parse origin/master` must be equal. If `origin/master` does not exist (e.g. fresh clone, no upstream tracking), stop and tell the user to set the upstream with `git branch --set-upstream-to=origin/master master` first. Do not proceed.
 5. `git tag -l "X.Y.Z"` (local) and `git ls-remote origin "refs/tags/X.Y.Z"` (remote) must both be empty
 6. `gh auth status` must show an authenticated user
 
@@ -83,6 +86,10 @@ Approval rules (strict; case-insensitive, whitespace-trimmed):
 - **Accept**: `yes`, `y`, `ok`, `go`, `approve`, `進めて`, `OK`, `はい`, `承認`
 - **Explicit reject**: `no`, `n`, `cancel`, `abort`, `やめて`, `いいえ`
 - **Anything else** (e.g., `yes?`, `maybe`, `ok かも`, `sure?`): treat as **ambiguous** and refuse to proceed. Ask the user for a clearer answer.
+
+**Silence, ellipsis (`...`), or any non-matching string is NOT approval.** Wait for an exact phrase from the accept list. Do not interpret the user's lack of objection as consent.
+
+**If the reply mixes an accept/reject with corrections or extra text** (e.g., `yes, but use 1.2.4 not 1.2.3`, `OK — only the patch version`, `no, wait`), treat as **ambiguous** and re-confirm with the corrected inputs. Do not pick the "obvious" interpretation.
 
 Both reject and ambiguous responses leave all state unchanged and exit the skill cleanly. Do not push, do not tag, do not create a release.
 
