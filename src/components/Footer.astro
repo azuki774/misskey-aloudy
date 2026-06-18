@@ -1,9 +1,42 @@
 ---
+import { SUPPORTED_CHARACTERS } from "../lib/voicevox/characters.ts";
+
 const year = new Date().getFullYear();
 ---
 
 <footer class="border-t border-border bg-bg-subtle">
   <div class="container mx-auto px-4 py-4 text-center text-xs sm:text-sm text-fg-muted">
     <p>&copy; {year} Ashley Skye. Licensed under the MIT License.</p>
+    <details class="mx-auto mt-3 max-w-2xl text-left">
+      <summary class="cursor-pointer hover:underline">クレジット / ライセンス</summary>
+      <div class="mt-2 space-y-2">
+        <p>
+          TTS エンジンに <a href="https://voicevox.hiroshiba.jp/" class="underline" rel="noopener" target="_blank">VOICEVOX</a> を使用しています。
+          ソフトウェア利用規約:
+          <a href="https://voicevox.hiroshiba.jp/term/" class="underline" rel="noopener" target="_blank">voicevox.hiroshiba.jp/term/</a>
+        </p>
+        <p>利用キャラクター (東北ずん子・ずんだもんプロジェクト):</p>
+        <ul class="list-inside list-disc space-y-1">
+          {
+            SUPPORTED_CHARACTERS.map((c) => (
+              <li>
+                <code class="rounded bg-bg px-1 py-0.5 font-mono text-xs">{c.creditLabel}</code>
+              </li>
+            ))
+          }
+        </ul>
+        <p>
+          ガイドライン:
+          <a href="https://zunko.jp/guideline.html" class="underline" rel="noopener" target="_blank">キャラクター利用の手引き</a>
+          /
+          <a href="https://zunko.jp/con_ongen_kiyaku.html" class="underline" rel="noopener" target="_blank">音源利用規約</a>
+        </p>
+        <p class="text-xs">
+          本プロジェクトは非商用・個人開発の OSS です (申請不要)。SSS LLC. および VOICEVOX
+          プロジェクトとは無関係であり、各キャラクター・VOICEVOX
+          ソフトウェアの権利はそれぞれの権利者に帰属します。
+        </p>
+      </div>
+    </details>
   </div>
 </footer>
