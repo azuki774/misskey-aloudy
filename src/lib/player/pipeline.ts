@@ -1,5 +1,6 @@
 import { NoteQueue } from "./queue.ts";
 import { PlaybackState } from "./state.ts";
+import { truncateForSpeech } from "./truncation.ts";
 import { synthesize as defaultSynthesize } from "../voicevox/client.ts";
 import { toReadingText as defaultToReadingText } from "../misskey/textConverter.ts";
 import type { Note } from "../misskey/types.ts";
@@ -194,8 +195,9 @@ export class PlaybackPipeline {
 			try {
 				this.state.setState("loading");
 				const text = this.#toReadingText(note);
+				const speechText = truncateForSpeech(text);
 				const buffer = await this.#synthesize({
-					text,
+					text: speechText,
 					speaker: this.defaultSpeaker,
 					speedScale: this.defaultSpeed,
 				});
