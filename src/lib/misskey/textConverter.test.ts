@@ -151,6 +151,48 @@ describe("classifyNote", () => {
 			expected: "renote",
 		},
 		{
+			description:
+				"renoteId + files + CW -> 'renote' (CW ignored, body not read)",
+			overrides: {
+				renoteId: "r1",
+				files: [makeFile("image/png")],
+				cw: "spoiler",
+			},
+			expected: "renote",
+		},
+		{
+			description: "renoteId + text (no CW) -> 'quote'",
+			overrides: { renoteId: "r1", text: "引用本文" },
+			expected: "quote",
+		},
+		{
+			description: "renoteId + files (no text, no CW) -> 'quote'",
+			overrides: {
+				renoteId: "r1",
+				text: null,
+				files: [makeFile("image/png")],
+			},
+			expected: "quote",
+		},
+		{
+			description: "renoteId + text + files (no CW) -> 'quote'",
+			overrides: {
+				renoteId: "r1",
+				text: "引用本文",
+				files: [makeFile("image/png")],
+			},
+			expected: "quote",
+		},
+		{
+			description: "renoteId + empty text + files (no CW) -> 'quote'",
+			overrides: {
+				renoteId: "r1",
+				text: "",
+				files: [makeFile("image/png")],
+			},
+			expected: "quote",
+		},
+		{
 			description: "replyId only -> 'reply'",
 			overrides: { replyId: "rep1", text: "了解" },
 			expected: "reply",
@@ -203,7 +245,7 @@ describe("classifyNote", () => {
 describe("describePrefix", () => {
 	type Case = {
 		description: string;
-		kind: "renote" | "reply";
+		kind: "renote" | "reply" | "quote";
 		overrides: Partial<Note>;
 		expected: string;
 	};
@@ -223,6 +265,26 @@ describe("describePrefix", () => {
 				user: makeUser({ name: null, username: "alice" }),
 			},
 			expected: "alice のリノート",
+		},
+		{
+			description: "quote with name",
+			kind: "quote",
+			overrides: {
+				renoteId: "r1",
+				text: "引用本文",
+				user: makeUser({ name: "アリス" }),
+			},
+			expected: "アリス の引用リノート",
+		},
+		{
+			description: "quote with name=null falls back to username",
+			kind: "quote",
+			overrides: {
+				renoteId: "r1",
+				text: "引用本文",
+				user: makeUser({ name: null, username: "alice" }),
+			},
+			expected: "alice の引用リノート",
 		},
 		{
 			description: "plain reply -> '<name> への返信'",
@@ -360,6 +422,43 @@ describe("toReadingText (integration)", () => {
 			description: "CW with null text (no body to omit)",
 			overrides: { text: null, cw: "spoiler" },
 			expected: "spoiler の注記があります",
+		},
+		{
+			description: "quote renote (renoteId + text) -> '<name> の引用リノート。<body>'",
+			overrides: { renoteId: "r1", text: "引用本文" },
+			expected: "アリス の引用リノート。引用本文",
+		},
+		{
+			description: "quote renote with name=null falls back to username",
+			overrides: {
+				renoteId: "r1",
+				text: "引用本文",
+				user: makeUser({ name: null, username: "alice" }),
+			},
+			expected: "alice の引用リノート。引用本文",
+		},
+		{
+			description: "quote renote + files -> '<name> の引用リノート。<file desc>'",
+			overrides: {
+				renoteId: "r1",
+				text: "見て",
+				files: [makeFile("image/png")],
+			},
+			expected: "アリス の引用リノート。見て。画像が投稿されました",
+		},
+		{
+			description: "quote renote (files only, text null) -> '<name> の引用リノート。<file desc>'",
+			overrides: {
+				renoteId: "r1",
+				text: null,
+				files: [makeFile("image/png")],
+			},
+			expected: "アリス の引用リノート。画像が投稿されました",
+		},
+		{
+			description: "renoteId + CW + text -> 'renote' (CW ignored, body not read)",
+			overrides: { renoteId: "r1", text: "本文", cw: "ネタバレ" },
+			expected: "アリス のリノート",
 		},
 	])('toReadingText: $description', ({ overrides, expected }) => {
 		expect(toReadingText(makeNote(overrides))).toBe(expected);

@@ -1,7 +1,7 @@
 # Note → Reading Text — Design
 
-> Status: Implemented.
-> Related issue: #14 (ノート→テキスト変換)
+> Status: Implemented. Updated for quote renote (#58, merged).
+> Related issue: #14 (ノート→テキスト変換), #58 (引用リノート本文読み上げ)
 > Related dependencies: #11 (ノート型定義, merged)
 
 ## 1. Goal
@@ -18,11 +18,13 @@ This layer is the bridge between the streaming layer (#12) and the TTS pipeline 
 | Internal helpers exported | Yes — `classifyNote`, `describePrefix`, `preprocessText`, `describeAttachments` are all exported | Tests can pin each stage's contract independently. The public entry point `toReadingText` is also exported. |
 | Documentation | JSDoc with `@example` on every public function | Lets editors surface expected behavior inline. |
 | Tests | Stage-level describes for each helper, plus an integration describe for `toReadingText` | Maps the public API 1:1 to test names. Future regression in one stage is pinpointed by the failing describe block. |
-| Rule data (table-driven) | Not in this revision | The current rule set is small (4 attachment kinds, 2 text patterns, 5 note kinds) and rules-with-data would over-engineer. If it grows past ~10 rules we can refactor. |
+| Rule data (table-driven) | Not in this revision | The current rule set is small (4 attachment kinds, 2 text patterns, 6 note kinds) and rules-with-data would over-engineer. If it grows past ~10 rules we can refactor. |
 | CW (Content Warning) | Output only the CW text + a fixed phrase; omit the body and attachments | Matches the issue acceptance criteria. The user confirms the CW first, then chooses whether to "open" it. |
 | Renote | `"<username> のリノート"`. Do **not** recurse into the renote's body | Renote chains are unbounded; recursing would balloon the spoken text. |
+| Quote renote (`renoteId` + body, no CW) | `"<username> の引用リノート" + body`. The original renoted text is **not** fetched or read | A quote renote has its own commentary worth reading aloud (issue #58). The original note is intentionally not recursed into, same reasoning as plain renote. |
 | Reply (with `replyId`, no `renoteId`) | `"<username> への返信" + text` | Spoken context for the user. |
 | Reply on a Renote (`replyId` + `renoteId`) | `"<username> のリノートへの返信" + text` | The UI shows this distinction; we mirror it. |
+| Renote + CW | Classify as `"renote"`, not `"quote"`. Body and CW are both skipped | A CW-renote is "I'm sharing a spoiler"; the body and CW warning are intentionally not read aloud. |
 | URLs | Stripped entirely | URLs are useless when spoken aloud. |
 | `:emoji_name:` custom emoji | Stripped entirely | Custom emoji are images; reading the name is awkward. |
 | Unicode emoji (e.g. `👍`) | Kept as-is | VoiceVox can attempt to read them; if not, the user will hear silence or a beep, which is acceptable. |
@@ -38,10 +40,10 @@ This layer is the bridge between the streaming layer (#12) and the TTS pipeline 
 // src/lib/misskey/textConverter.ts
 import type { Note, DriveFile } from "./types.ts";
 
-export type NoteKind = "renote" | "reply" | "cw" | "normal" | "empty";
+export type NoteKind = "renote" | "reply" | "quote" | "cw" | "normal" | "empty";
 
 export function classifyNote(note: Note): NoteKind;
-export function describePrefix(note: Note, kind: "renote" | "reply"): string;
+export function describePrefix(note: Note, kind: "renote" | "reply" | "quote"): string;
 export function preprocessText(text: string): string;
 export function describeAttachments(files: DriveFile[]): string;
 export function toReadingText(note: Note): string;
@@ -56,16 +58,21 @@ All five functions are pure. `toReadingText` is the public entry point; the othe
 Returns exactly one of:
 
 - `"reply"` — `note.replyId` is set (regardless of `renoteId`)
-- `"renote"` — `note.renoteId` is set
-- `"cw"` — `note.cw` is a non-empty string
+- `"quote"` — `note.renoteId` is set AND the note has body (`text` or `files`) AND `cw` is empty. A quote renote.
+- `"renote"` — `note.renoteId` is set, with no body, or with a non-empty `cw` (CW-renote)
+- `"cw"` — `note.cw` is a non-empty string and no `renoteId`
 - `"normal"` — `note.text` is a non-empty string or `note.files` has at least one entry
 - `"empty"` — none of the above
 
-The order of the checks matters: `replyId` takes priority over `renoteId` because a reply has a body worth reading, while a pure renote does not. A reply on a renote is therefore classified as `"reply"` so the reply's text is read out (with a "リノートへの返信" prefix) instead of being dropped.
+The order of the checks matters:
+
+- `replyId` takes priority over `renoteId` because a reply has a body worth reading, while a pure renote does not. A reply on a renote is therefore classified as `"reply"` so the reply's text is read out (with a "リノートへの返信" prefix) instead of being dropped.
+- For `renoteId`-only notes, the presence of a body bumps the kind to `"quote"` (issue #58). The CW exception (renote + CW → `"renote"`) preserves the prior behavior of "CW-renotes are spoilers, neither body nor CW warning is read aloud".
 
 ### 4.2 `describePrefix`
 
 - `kind === "renote"` → `"<user.name ?? user.username> のリノート"`
+- `kind === "quote"` → `"<user.name ?? user.username> の引用リノート"`
 - `kind === "reply"`:
   - With `renoteId`: `"<user.name ?? user.username> のリノートへの返信"`
   - Without `renoteId`: `"<user.name ?? user.username> への返信"`
@@ -106,6 +113,12 @@ if kind == "reply":
   prefix = describePrefix(note, "reply")
   body = note.text ? preprocessText(note.text) : ""
   return body ? `${prefix}。${body}` : prefix
+if kind == "quote":
+  prefix = describePrefix(note, "quote")
+  body = note.text ? preprocessText(note.text) : ""
+  files = describeAttachments(note.files ?? [])
+  tail = [body, files].filter(s => s.length > 0).join("。")
+  return tail ? `${prefix}。${tail}` : prefix
 if kind == "cw": return `${note.cw ?? ""} の注記があります`
 // kind == "normal"
 body = note.text ? preprocessText(note.text) : ""
@@ -116,7 +129,7 @@ if !files: return body
 return `${body}。${files}`
 ```
 
-The full stop `。` between body and file description is intentional: it gives VoiceVox a brief pause cue.
+The full stop `。` between body parts is intentional: it gives VoiceVox a brief pause cue.
 
 ## 5. Input / output examples
 
@@ -130,6 +143,10 @@ The full stop `。` between body and file description is intentional: it gives V
 | `{text: "見て", files: [{type: "image/png"}, {type: "video/mp4"}], user: {...}}` | `"見て。2 個のファイルが投稿されました"` |
 | `{text: "本文", cw: "ネタバレ", user: {...}}` | `"ネタバレ の注記があります"` |
 | `{renoteId: "r1", user: {name: "アリス", username: "alice"}}` | `"アリス のリノート"` |
+| `{renoteId: "r1", text: "引用本文", user: {name: "アリス"}}` | `"アリス の引用リノート。引用本文"` |
+| `{renoteId: "r1", text: "見て", files: [{type: "image/png"}], user: {...}}` | `"アリス の引用リノート。見て。画像が投稿されました"` |
+| `{renoteId: "r1", text: null, files: [{type: "image/png"}], user: {...}}` | `"アリス の引用リノート。画像が投稿されました"` |
+| `{renoteId: "r1", text: "本文", cw: "ネタバレ", user: {...}}` | `"アリス のリノート"` (CW-renote: neither body nor CW read) |
 | `{replyId: "rep1", text: "了解", user: {name: "ボブ", username: "bob"}}` | `"ボブ への返信。了解"` |
 | `{replyId: "rep1", renoteId: "r1", text: "これはリプ", user: {...}}` | `"アリス のリノートへの返信。これはリプ"` |
 | `{deletedAt: "2026-06-13T00:00:00.000Z"}` | `""` |
@@ -146,6 +163,8 @@ The full stop `。` between body and file description is intentional: it gives V
 - `note.files` is `undefined` → treat as `[]`
 - `note.user.name` is `null` → fall back to `user.username`
 - File with no recognizable `type` prefix → "ファイル" bucket
+- `replyId` + `renoteId` + `text` → classified as `"reply"` (replyId wins), the renoteId only affects the prefix wording
+- `renoteId` + `cw` (with or without body) → classified as `"renote"`, neither body nor CW warning is read aloud (CW-renote semantics)
 
 ## 7. Edge cases (explicitly NOT handled)
 
@@ -161,13 +180,13 @@ The full stop `。` between body and file description is intentional: it gives V
 
 Tests live in `src/lib/misskey/textConverter.test.ts`. Five `describe` blocks, one per public function, plus an integration `describe` for the entry point.
 
-- `describe("classifyNote")` — 10 cases: normal text, normal with files, normal with both, CW only, CW with text, CW with files, renote, reply, reply on renote, deleted.
-- `describe("describePrefix")` — 5 cases: renote, reply, reply-on-renote, username fallback, name vs username.
-- `describe("preprocessText")` — 6 cases: URL removal, emoji shortcode removal, Unicode emoji preserved, multiple whitespaces, leading/trailing whitespace, empty string.
-- `describe("describeAttachments")` — 6 cases: empty, single image, single video, single audio, single other, multiple (N ≥ 2).
-- `describe("toReadingText")` — 12 cases: maps directly to the Issue #14 acceptance criteria plus the in/out examples from §5.
+- `describe("classifyNote")` — 15 cases: normal text, normal with files, normal with both, CW only, CW with text, CW with files, renote, reply, reply on renote, deleted, **quote (renoteId + body), quote (renoteId + files), quote (renoteId + text + files), CW-renote (renoteId + CW + text)**, etc.
+- `describe("describePrefix")` — 7 cases: renote, reply, reply-on-renote, username fallback, name vs username, **quote with name, quote with name=null**.
+- `describe("preprocessText")` — 8 cases: URL removal, emoji shortcode removal, Unicode emoji preserved, multiple whitespaces, leading/trailing whitespace, empty string, whitespace-only.
+- `describe("describeAttachments")` — 8 cases: empty, single image, single video, single audio, single other, multiple (N ≥ 2), three mixed.
+- `describe("toReadingText")` — 21 cases: maps directly to the Issue #14 / #58 acceptance criteria plus the in/out examples from §5.
 
-Total: ~38 cases.
+Total: 59 cases.
 
 ## 9. Micro-adjustment guide
 
@@ -177,6 +196,7 @@ When a user wants to tweak the behavior, here's where to look:
 | --- | --- |
 | Add a new file type bucket (e.g. "ボイス") | `describeAttachments` switch in §4.4 |
 | Change the CW phrasing | `toReadingText` `kind === "cw"` branch in §4.5 |
+| Change the Quote-renote phrasing ("引用リノート" → other) | `describePrefix` `kind === "quote"` branch in §4.2 + `toReadingText` `kind === "quote"` branch in §4.5 |
 | Keep URLs instead of stripping | `preprocessText` in §4.3 |
 | Treat emojis differently | `preprocessText` in §4.3 |
 | Change Renote/Reply phrasing | `describePrefix` in §4.2 |
