@@ -17,7 +17,7 @@ const STATE_LABELS: Record<ConnectionState, string> = {
 };
 
 const READING_STATE_LABELS: Record<PlaybackStateKind, string> = {
-	idle: "OFF",
+	idle: "待機中",
 	loading: "読み上げ準備中…",
 	playing: "読み上げ中",
 	paused: "一時停止中",
