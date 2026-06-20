@@ -349,3 +349,39 @@ describe("PlaybackPipeline: queueChange", () => {
 		expect(sizes).toEqual([1, 0, 1, 0]);
 	});
 });
+
+describe("PlaybackPipeline: truncation", () => {
+	function makeNoteWithText(id: string, text: string): Note {
+		return { ...makeNote(id), text };
+	}
+
+	it("truncates text longer than 100 chars and appends 「以下略」 before synthesize", async () => {
+		pipeline.enqueue(makeNoteWithText("n1", "a".repeat(250)));
+		await tick();
+		const call = synthesize.mock.calls[0]?.[0];
+		expect(call?.text).toBe("a".repeat(100) + "以下略");
+	});
+
+	it("does not append the suffix when the text is exactly 100 chars", async () => {
+		const text = "a".repeat(100);
+		pipeline.enqueue(makeNoteWithText("n1", text));
+		await tick();
+		const call = synthesize.mock.calls[0]?.[0];
+		expect(call?.text).toBe(text);
+	});
+
+	it("does not append the suffix when the text is shorter than 100 chars", async () => {
+		const text = "a".repeat(30);
+		pipeline.enqueue(makeNoteWithText("n1", text));
+		await tick();
+		const call = synthesize.mock.calls[0]?.[0];
+		expect(call?.text).toBe(text);
+	});
+
+	it("truncates Japanese long text and appends 「以下略」", async () => {
+		pipeline.enqueue(makeNoteWithText("n1", "あ".repeat(250)));
+		await tick();
+		const call = synthesize.mock.calls[0]?.[0];
+		expect(call?.text).toBe("あ".repeat(100) + "以下略");
+	});
+});
