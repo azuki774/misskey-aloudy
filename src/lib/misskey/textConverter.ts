@@ -1,6 +1,6 @@
 import type { DriveFile, Note } from "./types.ts";
 
-export type NoteKind = "renote" | "reply" | "cw" | "normal" | "empty";
+export type NoteKind = "renote" | "reply" | "quote" | "cw" | "normal" | "empty";
 
 const URL_PATTERN = /https?:\/\/\S+/g;
 const CUSTOM_EMOJI_PATTERN = /:[A-Za-z0-9_]+:/g;
@@ -20,13 +20,16 @@ function getDisplayName(note: Note): string {
  * ノートの種類を判定する。
  *
  * `replyId` がある場合 (renoteId の有無に関わらず) は `"reply"`。
- * そうでず `renoteId` がある場合が `"renote"`。
+ * そうでず `renoteId` があり、本体 (text or files) があり、`cw` が無い場合は
+ * 引用リノートとして `"quote"`。
+ * `renoteId` のみ (本体なし) または `renoteId` + `cw` は `"renote"`。
  * `cw` が非空なら `"cw"` (本文・添付は読み上げない)。
  * テキストか添付があれば `"normal"`。
  * 何もなければ `"empty"`。
  *
  * @example
  * classifyNote({ renoteId: "r1", user: { name: "alice" } }); // => "renote"
+ * classifyNote({ renoteId: "r1", text: "引用本文" });          // => "quote"
  * classifyNote({ replyId: "rep1", text: "了解" });           // => "reply"
  * classifyNote({ replyId: "p", renoteId: "r" });             // => "reply"
  * classifyNote({ text: "本文", cw: "ネタバレ" });             // => "cw"
@@ -35,7 +38,12 @@ function getDisplayName(note: Note): string {
  */
 export function classifyNote(note: Note): NoteKind {
 	if (isNonEmptyString(note.replyId)) return "reply";
-	if (isNonEmptyString(note.renoteId)) return "renote";
+	if (isNonEmptyString(note.renoteId)) {
+		const hasBody = isNonEmptyString(note.text)
+			|| (Array.isArray(note.files) && note.files.length > 0);
+		if (hasBody && !isNonEmptyString(note.cw)) return "quote";
+		return "renote";
+	}
 	if (isNonEmptyString(note.cw)) return "cw";
 	if (isNonEmptyString(note.text)) return "normal";
 	if (Array.isArray(note.files) && note.files.length > 0) return "normal";
@@ -43,9 +51,10 @@ export function classifyNote(note: Note): NoteKind {
 }
 
 /**
- * Renote / Reply 用の前置詞を返す。
+ * Renote / Reply / Quote 用の前置詞を返す。
  *
  * `kind === "renote"` のとき `"<表示名> のリノート"`。
+ * `kind === "quote"` のとき `"<表示名> の引用リノート"`。
  * `kind === "reply"` のとき:
  * - `renoteId` もある場合: `"<表示名> のリノートへの返信"`
  * - 返信のみの場合:     `"<表示名> への返信"`
@@ -57,11 +66,18 @@ export function classifyNote(note: Note): NoteKind {
  * // => "アリス のリノート"
  *
  * @example
+ * describePrefix({ renoteId: "r", text: "引用本文", user: { name: "アリス" } }, "quote");
+ * // => "アリス の引用リノート"
+ *
+ * @example
  * describePrefix({ replyId: "p", user: { username: "bob" } }, "reply");
  * // => "bob への返信"
  */
-export function describePrefix(note: Note, kind: "renote" | "reply"): string {
+export function describePrefix(note: Note, kind: "renote" | "reply" | "quote"): string {
 	const name = getDisplayName(note);
+	if (kind === "quote") {
+		return `${name} の引用リノート`;
+	}
 	if (kind === "renote") {
 		return `${name} のリノート`;
 	}
@@ -133,6 +149,10 @@ export function describeAttachments(files: DriveFile[]): string {
  * // => "アリス のリノート"
  *
  * @example
+ * toReadingText({ renoteId: "r1", text: "引用本文", user: { name: "アリス" } });
+ * // => "アリス の引用リノート。引用本文"
+ *
+ * @example
  * toReadingText({ text: "見て", files: [{ type: "image/png" }], user: { name: "アリス" } });
  * // => "見て。画像が投稿されました"
  */
@@ -150,6 +170,14 @@ export function toReadingText(note: Note): string {
 		const prefix = describePrefix(note, "reply");
 		const body = note.text ? preprocessText(note.text) : "";
 		return body ? `${prefix}。${body}` : prefix;
+	}
+
+	if (kind === "quote") {
+		const prefix = describePrefix(note, "quote");
+		const body = note.text ? preprocessText(note.text) : "";
+		const files = describeAttachments(note.files ?? []);
+		const tail = [body, files].filter((s) => s.length > 0).join("。");
+		return tail ? `${prefix}。${tail}` : prefix;
 	}
 
 	if (kind === "cw") {
