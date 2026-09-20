@@ -54,4 +54,5 @@ export type PlayerEventHandler<E extends PlayerEvent> = (
 
 export type VoiceVoxPlayerOptions = {
 	audioFactory?: () => HTMLAudioElement;
+	playbackRate?: number;
 };

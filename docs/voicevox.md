@@ -133,7 +133,7 @@ No persistent state, no global event bus, no client-side cache of synthesized au
 
 ## 10. Out of scope
 
-- Speaker selection, voice/speed controls (issue #10 does not ask for them; these are Phase 2 features per `docs/requirements.md`).
+- Speaker selection (the home timeline's browser playback-speed control is implemented separately; this developer page intentionally has no speed control).
 - History of past syntheses.
 - Direct browser → VoiceVox call (i.e. removing the `/api/speech` server hop).
 - i18n of the page copy.

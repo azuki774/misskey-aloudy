@@ -1,4 +1,8 @@
 import { VoiceVoxPlayerError } from "./errors.ts";
+import {
+	DEFAULT_PLAYBACK_RATE,
+	validatePlaybackRate,
+} from "./playbackRate.ts";
 import type {
 	PlayerEvent,
 	PlayerEventHandler,
@@ -7,6 +11,12 @@ import type {
 } from "./types.ts";
 
 const BLOB_TYPE = "audio/wav";
+
+type PitchPreservingAudioElement = HTMLAudioElement & {
+	preservesPitch?: boolean;
+	mozPreservesPitch?: boolean;
+	webkitPreservesPitch?: boolean;
+};
 
 function assertBrowser(): void {
 	if (typeof globalThis.window === "undefined") {
@@ -25,10 +35,34 @@ function assertBrowser(): void {
 
 const defaultAudioFactory = (): HTMLAudioElement => new Audio();
 
+function preservePitch(audio: HTMLAudioElement): void {
+	const pitchAudio = audio as PitchPreservingAudioElement;
+	try {
+		pitchAudio.preservesPitch = true;
+	} catch {
+		// Some browsers expose this property as read-only or do not support it.
+	}
+	if ("mozPreservesPitch" in pitchAudio) {
+		try {
+			pitchAudio.mozPreservesPitch = true;
+		} catch {
+			// Ignore unsupported vendor-prefixed properties.
+		}
+	}
+	if ("webkitPreservesPitch" in pitchAudio) {
+		try {
+			pitchAudio.webkitPreservesPitch = true;
+		} catch {
+			// Ignore unsupported vendor-prefixed properties.
+		}
+	}
+}
+
 export class VoiceVoxPlayer {
 	#state: PlayerState = "idle";
 	#currentObjectUrl: string | null = null;
 	#destroyed = false;
+	#playbackRate: number;
 	#currentPlayResolve: (() => void) | null = null;
 	#currentPlayReject: ((err: VoiceVoxPlayerError) => void) | null = null;
 	#listeners: { [E in PlayerEvent]: Set<PlayerEventHandler<E>> } = {
@@ -40,8 +74,12 @@ export class VoiceVoxPlayer {
 
 	constructor(options: VoiceVoxPlayerOptions = {}) {
 		assertBrowser();
+		this.#playbackRate = validatePlaybackRate(
+			options.playbackRate === undefined ? DEFAULT_PLAYBACK_RATE : options.playbackRate,
+		);
 		const factory = options.audioFactory ?? defaultAudioFactory;
 		this.#audio = factory();
+		this.#applyPlaybackRateToAudio(this.#playbackRate);
 		this.#audio.addEventListener("ended", this.#handleEnded);
 		this.#audio.addEventListener("error", this.#handleError);
 	}
@@ -57,6 +95,19 @@ export class VoiceVoxPlayer {
 	get duration(): number {
 		const d = this.#audio.duration;
 		return Number.isFinite(d) ? d : 0;
+	}
+
+	get playbackRate(): number {
+		return this.#playbackRate;
+	}
+
+	setPlaybackRate(rate: number): void {
+		if (this.#destroyed) {
+			throw new VoiceVoxPlayerError("Player has been destroyed", "media_error");
+		}
+		const nextRate = validatePlaybackRate(rate);
+		this.#applyPlaybackRateToAudio(nextRate);
+		this.#playbackRate = nextRate;
 	}
 
 	/**
@@ -128,8 +179,10 @@ export class VoiceVoxPlayer {
 		const blob = new Blob([audioBuffer], { type: BLOB_TYPE });
 		const url = URL.createObjectURL(blob);
 		this.#currentObjectUrl = url;
+		this.#applyPlaybackRateToAudio(this.#playbackRate);
 		this.#audio.src = url;
 		this.#audio.load();
+		this.#applyPlaybackRateToAudio(this.#playbackRate);
 
 		this.#setState("playing");
 
@@ -222,6 +275,31 @@ export class VoiceVoxPlayer {
 		if (this.#currentObjectUrl !== null) {
 			URL.revokeObjectURL(this.#currentObjectUrl);
 			this.#currentObjectUrl = null;
+		}
+	}
+
+	#applyPlaybackRateToAudio(rate: number): void {
+		const previousDefaultRate = this.#audio.defaultPlaybackRate;
+		const previousRate = this.#audio.playbackRate;
+		preservePitch(this.#audio);
+		try {
+			this.#audio.defaultPlaybackRate = rate;
+			this.#audio.playbackRate = rate;
+		} catch (error: unknown) {
+			try {
+				this.#audio.defaultPlaybackRate = previousDefaultRate;
+			} catch {
+				// Best-effort rollback when the media element rejects assignment.
+			}
+			try {
+				this.#audio.playbackRate = previousRate;
+			} catch {
+				// Best-effort rollback when the media element rejects assignment.
+			}
+			throw new VoiceVoxPlayerError(
+				error instanceof Error ? error.message : "Failed to set audio playback rate",
+				"media_error",
+			);
 		}
 	}
 

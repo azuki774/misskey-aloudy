@@ -9,6 +9,9 @@ class MockAudioElement {
 	src = "";
 	currentTime = 0;
 	duration = NaN;
+	playbackRate = 1;
+	defaultPlaybackRate = 1;
+	preservesPitch = false;
 	paused = true;
 	play = vi.fn(async (): Promise<void> => {
 		this.paused = false;
@@ -16,7 +19,9 @@ class MockAudioElement {
 	pause = vi.fn((): void => {
 		this.paused = true;
 	});
-	load = vi.fn((): void => {});
+	load = vi.fn((): void => {
+		this.playbackRate = this.defaultPlaybackRate;
+	});
 	#listeners = new Map<string, Set<Listener>>();
 
 	addEventListener = vi.fn((type: string, listener: Listener): void => {
@@ -117,6 +122,150 @@ describe("VoiceVoxPlayer — initial state", () => {
 		const { player } = createPlayer();
 		expect(player.duration).toBe(0);
 	});
+
+	it("uses the default playback rate and preserves pitch", () => {
+		const { player, audio } = createPlayer();
+		expect(player.playbackRate).toBe(1);
+		expect(audio.defaultPlaybackRate).toBe(1);
+		expect(audio.playbackRate).toBe(1);
+		expect(audio.preservesPitch).toBe(true);
+	});
+
+	it("accepts a playback rate option", () => {
+		const audio = new MockAudioElement();
+		const player = new VoiceVoxPlayer({
+			playbackRate: 1.7,
+			audioFactory: () => audio as unknown as HTMLAudioElement,
+		});
+		expect(player.playbackRate).toBe(1.7);
+		expect(audio.defaultPlaybackRate).toBe(1.7);
+		expect(audio.playbackRate).toBe(1.7);
+	});
+
+	it.each([0.5, 2])("accepts the playback-rate boundary %s", (rate) => {
+		const audio = new MockAudioElement();
+		const player = new VoiceVoxPlayer({
+			playbackRate: rate,
+			audioFactory: () => audio as unknown as HTMLAudioElement,
+		});
+		expect(player.playbackRate).toBe(rate);
+		expect(audio.playbackRate).toBe(rate);
+	});
+
+	it.each([0.49, 2.01, Number.NaN, Number.POSITIVE_INFINITY, Number.NEGATIVE_INFINITY])(
+		"rejects an invalid constructor playback rate %s",
+		(rate) => {
+			const audio = new MockAudioElement();
+			expect(
+				() =>
+					new VoiceVoxPlayer({
+						playbackRate: rate,
+						audioFactory: () => audio as unknown as HTMLAudioElement,
+					}),
+			).toThrow(RangeError);
+		},
+	);
+});
+
+describe("VoiceVoxPlayer.setPlaybackRate", () => {
+	it("changes active playback without restarting, resetting, or settling it", async () => {
+		const { player, audio } = createPlayer();
+		const playPromise = player.play(makeBuffer(1));
+		audio.currentTime = 2.25;
+		const playCalls = audio.play.mock.calls.length;
+		let settled = false;
+		void playPromise.then(() => {
+			settled = true;
+		});
+
+		player.setPlaybackRate(1.5);
+
+		expect(player.playbackRate).toBe(1.5);
+		expect(audio.playbackRate).toBe(1.5);
+		expect(audio.defaultPlaybackRate).toBe(1.5);
+		expect(audio.preservesPitch).toBe(true);
+		expect(audio.currentTime).toBe(2.25);
+		expect(player.state).toBe("playing");
+		expect(audio.play).toHaveBeenCalledTimes(playCalls);
+		await new Promise<void>((resolve) => setTimeout(resolve, 0));
+		expect(settled).toBe(false);
+
+		audio.dispatch("ended");
+		await playPromise;
+	});
+
+	it("reapplies the requested rate after load resets playbackRate", async () => {
+		const { player, audio } = createPlayer();
+		player.setPlaybackRate(1.6);
+		audio.load = vi.fn((): void => {
+			audio.playbackRate = 1;
+		});
+		const playPromise = player.play(makeBuffer(1));
+		expect(audio.load).toHaveBeenCalled();
+		expect(audio.defaultPlaybackRate).toBe(1.6);
+		expect(audio.playbackRate).toBe(1.6);
+		audio.dispatch("ended");
+		await playPromise;
+
+		const nextPlayPromise = player.play(makeBuffer(2));
+		expect(audio.defaultPlaybackRate).toBe(1.6);
+		expect(audio.playbackRate).toBe(1.6);
+		audio.dispatch("ended");
+		await nextPlayPromise;
+	});
+
+	it("keeps the requested rate through pause and stop", async () => {
+		const { player, audio } = createPlayer();
+		const playPromise = player.play(makeBuffer(1));
+		player.setPlaybackRate(1.4);
+		player.pause();
+		expect(player.playbackRate).toBe(1.4);
+		player.stop();
+		expect(player.playbackRate).toBe(1.4);
+		expect(audio.playbackRate).toBe(1.4);
+		await playPromise;
+	});
+
+	it("rejects invalid values before changing the previous state", () => {
+		const { player, audio } = createPlayer();
+		player.setPlaybackRate(1.25);
+		for (const invalid of [0.49, 2.01, Number.NaN, Number.POSITIVE_INFINITY, Number.NEGATIVE_INFINITY]) {
+			expect(() => player.setPlaybackRate(invalid)).toThrow(RangeError);
+		}
+		expect(player.playbackRate).toBe(1.25);
+		expect(audio.playbackRate).toBe(1.25);
+		expect(audio.defaultPlaybackRate).toBe(1.25);
+	});
+
+	it("keeps the previous state when media assignment fails", () => {
+		const { player, audio } = createPlayer();
+		player.setPlaybackRate(1.25);
+		let shouldFail = false;
+		let currentRate = audio.playbackRate;
+		Object.defineProperty(audio, "playbackRate", {
+			configurable: true,
+			get: () => currentRate,
+			set: (value: number) => {
+				if (shouldFail) throw new Error("rate assignment failed");
+				currentRate = value;
+			},
+		});
+		shouldFail = true;
+
+		expect(() => player.setPlaybackRate(1.75)).toThrow(VoiceVoxPlayerError);
+		expect(player.playbackRate).toBe(1.25);
+		expect(audio.playbackRate).toBe(1.25);
+		expect(audio.defaultPlaybackRate).toBe(1.25);
+	});
+
+	it("rejects a setter call after destroy with VoiceVoxPlayerError", () => {
+		const { player } = createPlayer();
+		player.destroy();
+		expect(() => player.setPlaybackRate(1.5)).toThrow(VoiceVoxPlayerError);
+		expect(() => player.setPlaybackRate(1.5)).toThrowError(
+			expect.objectContaining({ kind: "media_error" }),
+		);
+	});
 });
 
 describe("VoiceVoxPlayer.play", () => {
@@ -199,12 +348,15 @@ describe("VoiceVoxPlayer.play (resume)", () => {
 	it("resumes from paused state without reloading the buffer", async () => {
 		const { player, audio } = createPlayer();
 		const p1 = player.play(makeBuffer(1));
+		player.setPlaybackRate(1.4);
 		audio.play.mockClear();
 		audio.load.mockClear();
 		player.pause();
 		const p2 = player.play(makeBuffer(1));
 		expect(audio.load).not.toHaveBeenCalled();
 		expect(audio.play).toHaveBeenCalled();
+		expect(audio.playbackRate).toBe(1.4);
+		expect(audio.defaultPlaybackRate).toBe(1.4);
 		expect(player.state).toBe("playing");
 		audio.dispatch("ended");
 		await p1;

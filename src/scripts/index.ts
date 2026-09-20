@@ -3,9 +3,14 @@ import { subscribeGlobalTimeline } from "../lib/misskey/globalTimeline.ts";
 import { PlaybackPipeline } from "../lib/player/pipeline.ts";
 import { PlaybackState } from "../lib/player/state.ts";
 import { VoiceVoxPlayer } from "../lib/voicevox/player.ts";
+import {
+	DEFAULT_PLAYBACK_RATE,
+	isValidPlaybackRate,
+} from "../lib/voicevox/playbackRate.ts";
 import type { ConnectionState } from "../lib/misskey/client.ts";
 import type { PlaybackStateKind } from "../lib/player/state.ts";
 import type { Note } from "../lib/misskey/types.ts";
+import { loadPlaybackRate, savePlaybackRate } from "./playbackRateSettings.ts";
 import { synthesizeViaSpeechApi } from "./synthesizeApi.ts";
 
 const STATE_LABELS: Record<ConnectionState, string> = {
@@ -49,6 +54,18 @@ function init(): void {
 	const readingStatusEl = document.getElementById(
 		"reading-status",
 	) as HTMLElement | null;
+	const playbackRateEl = document.getElementById(
+		"playback-rate",
+	) as HTMLInputElement | null;
+	const playbackRateValueEl = document.getElementById(
+		"playback-rate-value",
+	) as HTMLOutputElement | null;
+	const playbackRateResetEl = document.getElementById(
+		"playback-rate-reset",
+	) as HTMLButtonElement | null;
+	const playbackRateStatusEl = document.getElementById(
+		"playback-rate-status",
+	) as HTMLElement | null;
 	const errorEl = document.getElementById("error") as HTMLElement | null;
 	const notesEl = document.getElementById("notes") as HTMLElement | null;
 	const countEl = document.getElementById("count") as HTMLElement | null;
@@ -60,6 +77,10 @@ function init(): void {
 		!readingToggleEl ||
 		!stateEl ||
 		!readingStatusEl ||
+		!playbackRateEl ||
+		!playbackRateValueEl ||
+		!playbackRateResetEl ||
+		!playbackRateStatusEl ||
 		!errorEl ||
 		!notesEl ||
 		!countEl
@@ -79,6 +100,7 @@ function init(): void {
 	let readingState: PlaybackState | null = null;
 	let player: VoiceVoxPlayer | null = null;
 	let isReading = false;
+	let playbackRate = loadPlaybackRate();
 
 	function setStateText(text: string): void {
 		stateEl!.textContent = text;
@@ -86,6 +108,20 @@ function init(): void {
 
 	function setReadingStatusText(text: string): void {
 		readingStatusEl!.textContent = text;
+	}
+
+	function formatPlaybackRate(rate: number): string {
+		return `${rate.toFixed(1)}倍`;
+	}
+
+	function renderPlaybackRate(rate: number): void {
+		playbackRateEl!.value = String(rate);
+		playbackRateValueEl!.textContent = formatPlaybackRate(rate);
+		playbackRateEl!.setAttribute("aria-valuetext", formatPlaybackRate(rate));
+	}
+
+	function setPlaybackRateStatus(message: string): void {
+		playbackRateStatusEl!.textContent = message;
 	}
 
 	function setError(message: string | null): void {
@@ -101,6 +137,35 @@ function init(): void {
 	function setBusy(busy: boolean): void {
 		connectEl!.disabled = busy;
 		disconnectEl!.disabled = busy || client === null || !unsubscribe;
+	}
+
+	function applyPlaybackRateFromControl(): void {
+		const nextRate = Number(playbackRateEl!.value);
+		if (!isValidPlaybackRate(nextRate)) {
+			renderPlaybackRate(playbackRate);
+			setPlaybackRateStatus("再生速度は0.5倍から2.0倍の範囲で指定してください。");
+			return;
+		}
+
+		const previousRate = playbackRate;
+		if (player !== null) {
+			try {
+				player.setPlaybackRate(nextRate);
+			} catch (error: unknown) {
+				renderPlaybackRate(previousRate);
+				const message = error instanceof Error ? error.message : String(error);
+				setPlaybackRateStatus(`再生速度を変更できませんでした: ${message}`);
+				return;
+			}
+		}
+
+		playbackRate = nextRate;
+		renderPlaybackRate(playbackRate);
+		if (!savePlaybackRate(playbackRate)) {
+			setPlaybackRateStatus("再生速度は適用されましたが、設定を保存できませんでした。");
+		} else {
+			setPlaybackRateStatus("");
+		}
 	}
 
 	function updateReadingButtons(): void {
@@ -198,7 +263,7 @@ function init(): void {
 		if (pipeline !== null || client === null) return;
 		isReading = true;
 		readingState = new PlaybackState();
-		player = new VoiceVoxPlayer();
+		player = new VoiceVoxPlayer({ playbackRate });
 		pipeline = new PlaybackPipeline({
 			player,
 			state: readingState,
@@ -322,6 +387,13 @@ function init(): void {
 	});
 	disconnectEl.addEventListener("click", onDisconnectClick);
 	readingToggleEl.addEventListener("click", toggleReading);
+	playbackRateEl.addEventListener("input", applyPlaybackRateFromControl);
+	playbackRateResetEl.addEventListener("click", () => {
+		playbackRateEl.value = String(DEFAULT_PLAYBACK_RATE);
+		applyPlaybackRateFromControl();
+	});
+
+	renderPlaybackRate(playbackRate);
 
 	void onConnectClick();
 

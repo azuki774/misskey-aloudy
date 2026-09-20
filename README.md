@@ -8,6 +8,7 @@ A web application that reads Misskey timelines aloud using VoiceVox text-to-spee
 
 - **Real-time Timeline Narration**: New notes are read aloud as they arrive
 - **VoiceVox Integration**: High-quality Japanese text-to-speech
+- **Live Playback Speed**: Adjust browser playback from 0.5x to 2.0x without changing synthesized pitch
 - **Multiple Timelines**: Global, Home, Local, and custom lists (Phase 2)
 - **Browser-based**: No installation required, works in modern browsers
 
@@ -91,7 +92,7 @@ Useful variables: `PORT=...`, `HOST=...`, `TEXT=...`, `SPEAKER=...`, `AUDIO_FILE
 ### Test pages
 
 - **VoiceVox test page** (issue #10): start the dev server (`pnpm run dev`) and open <http://localhost:3000/test-voicevox>. Lets you type text, click 合成して再生 to hear the synthesized audio, and 停止 to terminate playback. Surfaces a clear error when VoiceVox is offline.
-- **Misskey timeline page** (issue #15): the home route, <http://localhost:3000/>. Reads `MISSKEY_INSTANCE_URL` from `.env` and renders it as a readonly input. Click 接続 to subscribe to the global timeline; received notes stream into a list in real time. The page is display-only — no audio — because the TTS pipeline (#19) has not been built yet. This is a developer-facing tool, not part of the user-facing product.
+- **Misskey timeline page** (issue #15): the home route, <http://localhost:3000/>. Reads `MISSKEY_INSTANCE_URL` from `.env` and renders it as a readonly input. Click 接続 to subscribe to the global timeline; received notes stream into a list in real time. Turn 読み上げ on to run the VoiceVox pipeline, and use 再生速度 to change browser playback live without changing the existing VoiceVox synthesis speed.
 
 ## Documentation
 
