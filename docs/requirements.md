@@ -38,6 +38,7 @@ Users who want to listen to Misskey timelines while doing other tasks (cooking, 
 | Real-time Updates | Stream new notes via WebSocket or polling |
 | VoiceVox TTS | Convert note text to speech using VoiceVox API |
 | Playback Controls | Play, pause, skip current note |
+| Browser Playback Speed | Adjust browser audio playback from 0.5x to 2.0x while reading; persist the setting locally |
 | No Authentication | Read public timeline without login |
 
 ### Phase 2
@@ -51,7 +52,6 @@ Users who want to listen to Misskey timelines while doing other tasks (cooking, 
 | Channel Support | Read channel posts |
 | Note Filtering | Skip replies, renotes, or specific users |
 | Voice Selection | Choose VoiceVox speaker |
-| Reading Speed | Adjust playback speed |
 
 ### Out of Scope
 
@@ -96,15 +96,17 @@ Users who want to listen to Misskey timelines while doing other tasks (cooking, 
 4. The app server calls VoiceVox `/audio_query` and `/synthesis` and returns the resulting `audio/wav` bytes to the browser
 5. Browser plays the audio via the `VoiceVoxPlayer`
 
+Playback speed is intentionally separate from synthesis. VoiceVox continues to receive the existing synthesis speed (`speedScale: 1.1`); after the WAV is returned, the browser applies the user's `HTMLMediaElement.playbackRate` (0.5x–2.0x) without changing pitch. Changing this value does not trigger another synthesis request and takes effect immediately for active audio.
+
 > The browser does not call VoiceVox directly in the MVP. All synthesis is mediated by the app server so that input validation, secrets management (`VOICEVOX_URL` stays server-side), and future auth live in one place.
 
 ### Components
 
 | Component | Technology | Purpose |
 |-----------|------------|---------|
-| Frontend | Astro + TypeScript | Web UI, WebSocket client, calls `/api/speech` for synthesis |
+| Frontend | Astro + TypeScript | Web UI, WebSocket client, calls `/api/speech` for synthesis, and controls browser-side playback rate |
 | App Server | Astro (Node 24, server output) | Hosts the API routes (`/api/speech`) and proxies to VoiceVox |
-| TTS Engine | VoiceVox | Text-to-speech synthesis; reached only via the app server in the MVP |
+| TTS Engine | VoiceVox | Text-to-speech synthesis; reached only via the app server in the MVP. Synthesis speed remains independent of browser playback speed. |
 | Runtime | Node 24 | JavaScript runtime |
 | Package Manager | pnpm | Dependency management |
 | Container | Docker | Application packaging |
@@ -130,7 +132,7 @@ CMD ["node", "dist/server/entry.mjs"]
 
 ### VoiceVox
 
-VoiceVox runs as a separate container. The browser accesses it directly.
+VoiceVox runs as a separate container. The app server accesses it through the server-side `/api/speech` path; the browser does not call the engine directly.
 
 ```yaml
 # docker-compose.yml example

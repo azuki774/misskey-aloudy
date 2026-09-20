@@ -25,7 +25,7 @@ Originally this was scoped as a "test page" at `/test-misskey` (issue #15). The 
 | Relative time | Computed in the script at receive time | Cheap, no library needed. |
 | Multi-instance | Not supported. The page binds to a single env-var URL. | Out of scope. Future #20 will provide a real picker. |
 | Renote / Reply / CW | Not displayed as a separate label | YAGNI. The username + text already convey the main content. We can add a small "Reply" / "Renote" / "CW" prefix later if needed. |
-| toReadingText (#14) | Not used in this page | The page is for **displaying** notes, not for TTS. The TTS pipeline (#19) will consume `toReadingText` later. |
+| toReadingText (#14) | Used by the reading pipeline when 読み上げ is enabled | The page displays notes and, when opted in, sends new notes through the existing TTS pipeline. |
 | URL / `:emoji:` stripping | Not applied | Same reason. The user sees the original text. |
 | Cleanup | `beforeunload` calls `client.destroy()` | Same pattern as #10. |
 | Unit tests | None | The existing unit tests for `MisskeyClient` (#13) and `subscribeGlobalTimeline` (#12) cover the underlying logic. Adding a jsdom + Vitest setup for a single page is out of scope. The page is verified manually in the PR's checklist. |
@@ -62,9 +62,10 @@ The browser script keeps only the following state:
 - `client: MisskeyClient | null` — module-scoped, single instance per page load
 - `unsubscribe: (() => void) | null` — the unsubscribe function returned by `subscribeGlobalTimeline`
 - `noteCount: number` — UI counter, updated as notes arrive
+- `playbackRate: number` — the browser playback rate, initialized from local storage and retained outside the player lifecycle
 - DOM references: `urlEl`, `connectEl`, `disconnectEl`, `stateEl`, `errorEl`, `notesEl`, `countEl` — captured once on `DOMContentLoaded`
 
-No persistent storage. No global event bus.
+The selected browser playback rate is persisted in local storage. No global event bus is used.
 
 ## 6. Behavior
 
@@ -152,14 +153,15 @@ No automated tests for this page (would require jsdom + DOM fixtures; out of sco
 
 Manual verification steps (recorded in the PR body):
 
-1. `docker compose up -d voicevox` is **not** required for this page (VoiceVox is not used here).
+1. Start VoiceVox when verifying 読み上げ; timeline display and the playback-speed control do not require the engine.
 2. Set `MISSKEY_INSTANCE_URL=https://misskey.io` in `.env` (or rely on the fallback).
 3. `pnpm run dev`.
 4. Open `http://localhost:4321/` in a browser.
 5. Click 接続. The state should go 接続中… → 接続済み.
 6. New notes should appear in the list within seconds.
-7. Click 切断. The state should go 切断 → 未接続.
-8. With a reachable network but unreachable Misskey (e.g. set `MISSKEY_INSTANCE_URL` to a typo), click 接続. State should land on エラー and the error region should show the connection failure.
+7. While reading is OFF or while connected, set 再生速度 and verify the output changes; the control remains usable when disconnected.
+8. Click 切断. The state should go 切断 → 未接続 while the playback-speed control remains available.
+9. With a reachable network but unreachable Misskey (e.g. set `MISSKEY_INSTANCE_URL` to a typo), click 接続. State should land on エラー and the error region should show the connection failure.
 
 Required CI checks: `pnpm run lint`, `pnpm run typecheck`, `pnpm test`, `pnpm run build`.
 
@@ -171,8 +173,7 @@ Required CI checks: `pnpm run lint`, `pnpm run typecheck`, `pnpm test`, `pnpm ru
 - Multiple-instance picker.
 - E2E tests via Playwright.
 - "Pause the stream" / "filter notes" / "save notes" controls.
-- toReadingText integration (that's #19).
-- Audio playback of incoming notes (that's #19's domain).
+- Speaker selection and other synthesis controls.
 
 ## 10. Documentation updates
 
