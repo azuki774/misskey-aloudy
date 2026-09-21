@@ -41,7 +41,7 @@ if (process.env.NODE_ENV !== "production" && instanceUrl === FALLBACK_INSTANCE_U
       />
     </div>
 
-    <div class="mt-4 flex gap-2">
+    <div class="mt-4 flex flex-wrap items-center gap-2">
       <button
         id="connect"
         type="button"
@@ -82,10 +82,7 @@ if (process.env.NODE_ENV !== "production" && instanceUrl === FALLBACK_INSTANCE_U
           </g>
         </svg>
       </button>
-    </div>
-
-    <section class="mt-4 rounded-md border border-border p-3" aria-labelledby="playback-rate-label">
-      <div class="flex flex-wrap items-center gap-x-3 gap-y-2">
+      <div class="flex flex-wrap items-center gap-x-2 gap-y-2">
         <label id="playback-rate-label" for="playback-rate" class="text-sm font-medium">
           再生速度
         </label>
@@ -96,8 +93,8 @@ if (process.env.NODE_ENV !== "production" && instanceUrl === FALLBACK_INSTANCE_U
           max={MAX_PLAYBACK_RATE}
           step={PLAYBACK_RATE_STEP}
           value={DEFAULT_PLAYBACK_RATE}
-          aria-describedby="playback-rate-help playback-rate-status"
-          class="w-48 accent-green-600"
+          aria-describedby="playback-rate-status"
+          class="w-24 accent-green-600 sm:w-32"
         />
         <output id="playback-rate-value" for="playback-rate" class="min-w-12 text-sm font-medium">
           1.0倍
@@ -110,11 +107,8 @@ if (process.env.NODE_ENV !== "production" && instanceUrl === FALLBACK_INSTANCE_U
           1.0倍に戻す
         </button>
       </div>
-      <p id="playback-rate-help" class="mt-2 text-xs text-fg-muted">
-        標準音声を1.0倍とした相対速度です。読み上げ中もすぐに変更できます。
-      </p>
-      <p id="playback-rate-status" class="mt-1 text-xs text-fg-muted" role="status" aria-live="polite"></p>
-    </section>
+    </div>
+    <p id="playback-rate-status" class="mt-1 text-xs text-fg-muted empty:hidden" role="status" aria-live="polite"></p>
 
     <p class="mt-4 text-sm">
       Misskey 接続: <span id="state" class="font-medium">未接続</span>
