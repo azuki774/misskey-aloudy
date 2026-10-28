@@ -119,6 +119,20 @@ docker build -t misskey-aloudy .
 docker run -p 3000:3000 misskey-aloudy
 ```
 
+## Dependency updates
+
+[Renovate](renovate.jsonc) schedules ordinary dependency updates during Friday
+20:00–20:59 in `Asia/Tokyo` (JST), not at an exact minute. Up to 7 ordinary
+Renovate PRs may be open concurrently, with no hourly PR limit.
+Vulnerability-alert fixes bypass this schedule and the ordinary 7-PR limit
+and request immediate PR creation.
+
+GitHub Actions references are pinned to commit SHAs (SHA-1), and only GitHub
+Actions updates are eligible for automerge; other dependency updates require
+manual merging. Security updates require GitHub's dependency graph and
+Dependabot alerts to be enabled, plus Renovate permission to read vulnerability
+alerts and create PRs.
+
 ## License
 
 MIT

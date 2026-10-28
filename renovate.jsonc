@@ -1,0 +1,35 @@
+{
+  "$schema": "https://docs.renovatebot.com/renovate-schema.json",
+  "extends": [
+    "config:recommended",
+    // Pin GitHub Actions to immutable commit SHAs (SHA-1, not SHA-256).
+    "helpers:pinGitHubActionDigests"
+  ],
+  "timezone": "Asia/Tokyo",
+  // Friday 20:00-20:59 JST window. Renovate may run at any minute within the
+  // hour; this does not trigger at an exact minute.
+  "schedule": [
+    "* 20 * * 5"
+  ],
+  // Limit ordinary PRs to 7 concurrent and disable the hourly limit so the
+  // single weekly hour is not throttled.
+  "prConcurrentLimit": 7,
+  "prHourlyLimit": 0,
+  // Security alerts bypass the weekly schedule and the normal concurrency cap.
+  "vulnerabilityAlerts": {
+    "enabled": true,
+    "schedule": [],
+    "prCreation": "immediate"
+  },
+  "packageRules": [
+    {
+      "matchManagers": [
+        "github-actions"
+      ],
+      // Automerge only action/workflow updates, not runtime or runner
+      // version updates.
+      "matchDepTypes": ["action", "workflow"],
+      "automerge": true
+    }
+  ]
+}
